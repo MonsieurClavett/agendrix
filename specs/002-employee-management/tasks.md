@@ -137,7 +137,7 @@ Single Next.js project — paths relative to the repository root (`Agendrix/`).
    - `[Spec Kit] Add implementation plan` — plan.md + research.md + data-model.md + contracts/ + quickstart.md + CLAUDE.md update
    - `[Spec Kit] Add tasks` — tasks.md
    - `[Spec Kit] Implementation progress` — schema migration + all `src/` changes + new shadcn components + the Radix dialog dep
-- [ ] T034 Push the branch: `git push -u origin 002-employee-management`. Optionally open a PR.
+- [X] T034 Push the branch: `git push -u origin 002-employee-management`. Optionally open a PR.
 
 ---
 
