@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -17,13 +18,16 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toISODate, formatHHMM } from "@/lib/week";
-import type { Employee, WeekShift } from "./types";
+import { getPositionColor } from "@/lib/positions";
+import type { Employee, PositionOption, WeekShift } from "./types";
 
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   employees: Employee[];
+  positions: PositionOption[];
   defaultDate: string;
+  defaultPositionId?: string | null;
   shift?: WeekShift | null;
   onDeleteRequest?: (shift: WeekShift) => void;
 };
@@ -35,7 +39,9 @@ export function ShiftDialog({
   open,
   onOpenChange,
   employees,
+  positions,
   defaultDate,
+  defaultPositionId,
   shift,
   onDeleteRequest,
 }: Props) {
@@ -64,8 +70,6 @@ export function ShiftDialog({
     }
   }, [state.success, state.error, open, onOpenChange, router, shift]);
 
-  // Build picker list — for edit, include the current assignee even if
-  // they're deactivated (they wouldn't be in the active picker list).
   const pickerEmployees: Employee[] =
     shift && !employees.some((e) => e.id === shift.employeeId)
       ? [...employees, { id: shift.employeeId, name: shift.employee.name }]
@@ -74,6 +78,8 @@ export function ShiftDialog({
   const initialDate = shift ? toISODate(shift.startsAt) : defaultDate;
   const initialStart = shift ? formatHHMM(shift.startsAt) : "09:00";
   const initialEnd = shift ? formatHHMM(shift.endsAt) : "17:00";
+  const initialPositionId =
+    shift?.positionId ?? defaultPositionId ?? "";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -109,6 +115,14 @@ export function ShiftDialog({
                 {state.fieldErrors.employeeId[0]}
               </p>
             )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="shift-position">Position</Label>
+            <PositionSelect
+              positions={positions}
+              defaultValue={initialPositionId}
+            />
           </div>
 
           <div className="grid grid-cols-3 gap-3">
@@ -185,5 +199,42 @@ export function ShiftDialog({
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function PositionSelect({
+  positions,
+  defaultValue,
+}: {
+  positions: PositionOption[];
+  defaultValue: string;
+}) {
+  const [value, setValue] = React.useState(defaultValue);
+  const selected = positions.find((p) => p.id === value);
+  const palette = selected ? getPositionColor(selected.color) : null;
+  return (
+    <div className="flex items-center gap-2">
+      <span
+        className="border-border size-5 shrink-0 rounded-full border"
+        style={{
+          backgroundColor: palette ? palette.swatch : "transparent",
+        }}
+        aria-hidden="true"
+      />
+      <select
+        id="shift-position"
+        name="positionId"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        className="border-input bg-background focus-visible:border-ring focus-visible:ring-ring/50 flex h-9 w-full rounded-md border px-3 py-1 text-sm shadow-xs focus-visible:ring-[3px] outline-none"
+      >
+        <option value="">Aucune</option>
+        {positions.map((p) => (
+          <option key={p.id} value={p.id}>
+            {p.name}
+          </option>
+        ))}
+      </select>
+    </div>
   );
 }

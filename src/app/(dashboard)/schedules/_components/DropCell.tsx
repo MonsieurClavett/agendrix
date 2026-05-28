@@ -4,17 +4,14 @@ import * as React from "react";
 import { useDroppable } from "@dnd-kit/core";
 
 import { cn } from "@/lib/utils";
-import { toISODate } from "@/lib/week";
 
 type Props = {
-  day: Date;
-  employeeId: string;
+  id: string;
   enabled: boolean;
   children: React.ReactNode;
 };
 
-export function DropCell({ day, employeeId, enabled, children }: Props) {
-  const id = `${toISODate(day)}|${employeeId}`;
+export function DropCell({ id, enabled, children }: Props) {
   const droppable = useDroppable({ id, disabled: !enabled });
 
   return (

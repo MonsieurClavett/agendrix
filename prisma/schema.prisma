@@ -9,12 +9,13 @@ datasource db {
 }
 
 model Company {
-  id        String   @id @default(cuid())
+  id        String     @id @default(cuid())
   name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
   users     User[]
   shifts    Shift[]
+  positions Position[]
 }
 
 enum Role {
@@ -38,18 +39,35 @@ model User {
   @@index([companyId])
 }
 
+model Position {
+  id        String   @id @default(cuid())
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name      String
+  color     String
+  shifts    Shift[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId, name])
+  @@index([companyId])
+}
+
 model Shift {
-  id         String   @id @default(cuid())
+  id         String    @id @default(cuid())
   companyId  String
-  company    Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company    Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
   employeeId String
-  employee   User     @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  employee   User      @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  positionId String?
+  position   Position? @relation(fields: [positionId], references: [id], onDelete: SetNull)
   startsAt   DateTime
   endsAt     DateTime
   note       String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
   @@index([companyId, startsAt])
   @@index([employeeId, startsAt])
+  @@index([positionId])
 }

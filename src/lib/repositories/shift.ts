@@ -14,8 +14,12 @@ const shiftSelect = {
   startsAt: true,
   endsAt: true,
   note: true,
+  positionId: true,
   employee: {
     select: { id: true, name: true, isActive: true },
+  },
+  position: {
+    select: { id: true, name: true, color: true },
   },
 } as const;
 
@@ -25,7 +29,9 @@ export type ShiftRow = {
   startsAt: Date;
   endsAt: Date;
   note: string | null;
+  positionId: string | null;
   employee: { id: string; name: string | null; isActive: boolean };
+  position: { id: string; name: string; color: string } | null;
 };
 
 /** MANAGER week view: every shift of the tenant overlapping the range. */
@@ -65,15 +71,22 @@ export async function listShiftsForUserWeek(
 /**
  * Insert a shift after verifying:
  *  - the assignee is a User of `ctx.companyId` (throws EMPLOYEE_NOT_FOUND)
- *  - no existing shift of that employee overlaps the [startsAt, endsAt)
- *    interval (throws OVERLAP)
+ *  - if `positionId !== null`, the position belongs to `ctx.companyId`
+ *    (throws POSITION_NOT_FOUND)
+ *  - no existing shift of that employee overlaps [startsAt, endsAt)
+ *    (throws OVERLAP)
  *
- * Both checks happen inside the same transaction as the insert so
- * concurrent writers cannot both pass the pre-check.
+ * All checks run inside the same transaction as the insert.
  */
 export async function createShift(
   ctx: TenantContext,
-  data: { employeeId: string; startsAt: Date; endsAt: Date; note: string | null },
+  data: {
+    employeeId: string;
+    startsAt: Date;
+    endsAt: Date;
+    note: string | null;
+    positionId: string | null;
+  },
 ) {
   return db.$transaction(async (tx) => {
     const employee = await tx.user.findFirst({
@@ -81,6 +94,14 @@ export async function createShift(
       select: { id: true },
     });
     if (!employee) throw new Error("EMPLOYEE_NOT_FOUND");
+
+    if (data.positionId) {
+      const position = await tx.position.findFirst({
+        where: { id: data.positionId, companyId: ctx.companyId },
+        select: { id: true },
+      });
+      if (!position) throw new Error("POSITION_NOT_FOUND");
+    }
 
     const overlap = await tx.shift.findFirst({
       where: {
@@ -99,6 +120,7 @@ export async function createShift(
         startsAt: data.startsAt,
         endsAt: data.endsAt,
         note: data.note,
+        positionId: data.positionId,
       },
       select: shiftSelect,
     });
@@ -109,13 +131,21 @@ export async function createShift(
  * Update an existing shift. Verifies:
  *  - the shift belongs to `ctx.companyId` (throws NOT_FOUND)
  *  - the new assignee belongs to `ctx.companyId` (throws EMPLOYEE_NOT_FOUND)
+ *  - if `positionId !== null`, the position belongs to `ctx.companyId`
+ *    (throws POSITION_NOT_FOUND)
  *  - the new interval does not overlap any OTHER shift of that employee
  *    (throws OVERLAP) — excludes the shift being updated itself.
  */
 export async function updateShift(
   ctx: TenantContext,
   shiftId: string,
-  data: { employeeId: string; startsAt: Date; endsAt: Date; note: string | null },
+  data: {
+    employeeId: string;
+    startsAt: Date;
+    endsAt: Date;
+    note: string | null;
+    positionId: string | null;
+  },
 ) {
   return db.$transaction(async (tx) => {
     const existing = await tx.shift.findFirst({
@@ -129,6 +159,14 @@ export async function updateShift(
       select: { id: true },
     });
     if (!employee) throw new Error("EMPLOYEE_NOT_FOUND");
+
+    if (data.positionId) {
+      const position = await tx.position.findFirst({
+        where: { id: data.positionId, companyId: ctx.companyId },
+        select: { id: true },
+      });
+      if (!position) throw new Error("POSITION_NOT_FOUND");
+    }
 
     const overlap = await tx.shift.findFirst({
       where: {
@@ -148,6 +186,7 @@ export async function updateShift(
         startsAt: data.startsAt,
         endsAt: data.endsAt,
         note: data.note,
+        positionId: data.positionId,
       },
       select: shiftSelect,
     });

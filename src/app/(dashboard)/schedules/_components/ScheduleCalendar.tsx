@@ -26,14 +26,18 @@ import { ScheduleToolbar } from "./ScheduleToolbar";
 import { ShiftDialog } from "./ShiftDialog";
 import { WeekGridDesktop } from "./WeekGridDesktop";
 import { WeekStackedMobile } from "./WeekStackedMobile";
-import type { Employee, WeekShift } from "./types";
+import type { Employee, PositionOption, WeekShift } from "./types";
 
 type Props = {
   shifts: WeekShift[];
   range: WeekRange;
   employees: Employee[];
+  positions: PositionOption[];
   canMutate: boolean;
   today: Date;
+  selectedPositionIds: Set<string>;
+  includeNoneFilter: boolean;
+  groupBy: "employee" | "position";
 };
 
 type OptimisticAction = {
@@ -43,14 +47,20 @@ type OptimisticAction = {
   newEndsAt: Date;
   newEmployeeId: string;
   newEmployeeName: string | null;
+  newPositionId: string | null;
+  newPosition: { id: string; name: string; color: string } | null;
 };
 
 export function ScheduleCalendar({
   shifts,
   range,
   employees,
+  positions,
   canMutate,
   today,
+  selectedPositionIds,
+  includeNoneFilter,
+  groupBy,
 }: Props) {
   const [createOpen, setCreateOpen] = React.useState(false);
   const [editShift, setEditShift] = React.useState<WeekShift | null>(null);
@@ -76,6 +86,8 @@ export function ScheduleCalendar({
                 id: action.newEmployeeId,
                 name: action.newEmployeeName,
               },
+              positionId: action.newPositionId,
+              position: action.newPosition,
             }
           : s,
       );
@@ -85,52 +97,51 @@ export function ScheduleCalendar({
 
   const [, startTransition] = React.useTransition();
 
+  const filteredShifts = React.useMemo(() => {
+    const anyFilter = selectedPositionIds.size > 0 || includeNoneFilter;
+    if (!anyFilter) return optimisticShifts;
+    return optimisticShifts.filter((s) => {
+      if (s.positionId === null) return includeNoneFilter;
+      return selectedPositionIds.has(s.positionId);
+    });
+  }, [optimisticShifts, selectedPositionIds, includeNoneFilter]);
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor),
   );
 
-  // Compute totals (in minutes) per employee, per day, and the grand total,
-  // all derived from the optimistic shift list so DnD updates them live.
-  const { employeeTotals, dayTotals, grandTotal } = React.useMemo(() => {
+  const { rowTotals, dayTotals, grandTotal } = React.useMemo(() => {
     const days = daysOfWeek(range.start);
-    const employeeTotals = new Map<string, number>();
+    const rowTotals = new Map<string, number>();
     const dayTotals = new Array<number>(7).fill(0);
     let grandTotal = 0;
 
-    for (const s of optimisticShifts) {
+    for (const s of filteredShifts) {
       const minutes = Math.round(
         (s.endsAt.getTime() - s.startsAt.getTime()) / 60_000,
       );
-      employeeTotals.set(
-        s.employeeId,
-        (employeeTotals.get(s.employeeId) ?? 0) + minutes,
-      );
+      const rowKey =
+        groupBy === "employee" ? s.employeeId : (s.positionId ?? "none");
+      rowTotals.set(rowKey, (rowTotals.get(rowKey) ?? 0) + minutes);
+
       const dayIndex = days.findIndex((d) => isSameLocalDay(d, s.startsAt));
       if (dayIndex >= 0) dayTotals[dayIndex] += minutes;
       grandTotal += minutes;
     }
 
-    return { employeeTotals, dayTotals, grandTotal };
-  }, [optimisticShifts, range.start]);
+    return { rowTotals, dayTotals, grandTotal };
+  }, [filteredShifts, range.start, groupBy]);
 
   const handleDragEnd = (event: DragEndEvent) => {
     if (!event.over || !canMutate) return;
     const shiftId = String(event.active.id);
     const overId = String(event.over.id);
-    const [toDateISO, toEmployeeId] = overId.split("|");
-    if (!toDateISO || !toEmployeeId) return;
+    const [toDateISO, suffix] = overId.split("|");
+    if (!toDateISO || !suffix) return;
 
     const original = shifts.find((s) => s.id === shiftId);
     if (!original) return;
-
-    const originalDateISO = toISODate(original.startsAt);
-    if (
-      originalDateISO === toDateISO &&
-      original.employeeId === toEmployeeId
-    ) {
-      return;
-    }
 
     const [yyyy, mm, dd] = toDateISO.split("-").map(Number);
     const newStartsAt = new Date(original.startsAt);
@@ -139,8 +150,40 @@ export function ScheduleCalendar({
       original.endsAt.getTime() - original.startsAt.getTime();
     const newEndsAt = new Date(newStartsAt.getTime() + duration);
 
-    const target = employees.find((e) => e.id === toEmployeeId);
-    const newEmployeeName = target?.name ?? original.employee.name;
+    let newEmployeeId = original.employeeId;
+    let newEmployeeName = original.employee.name;
+    let newPositionId = original.positionId;
+    let newPosition = original.position;
+
+    if (suffix.startsWith("emp:")) {
+      const toEmployeeId = suffix.slice(4);
+      const originalDateISO = toISODate(original.startsAt);
+      if (
+        originalDateISO === toDateISO &&
+        original.employeeId === toEmployeeId
+      ) {
+        return;
+      }
+      newEmployeeId = toEmployeeId;
+      const target = employees.find((e) => e.id === toEmployeeId);
+      newEmployeeName = target?.name ?? original.employee.name;
+    } else if (suffix.startsWith("pos:")) {
+      const rawPositionId = suffix.slice(4);
+      const toPositionId = rawPositionId === "none" ? null : rawPositionId;
+      const originalDateISO = toISODate(original.startsAt);
+      if (
+        originalDateISO === toDateISO &&
+        original.positionId === toPositionId
+      ) {
+        return;
+      }
+      newPositionId = toPositionId;
+      newPosition = toPositionId
+        ? positions.find((p) => p.id === toPositionId) ?? original.position
+        : null;
+    } else {
+      return;
+    }
 
     startTransition(async () => {
       dispatchOptimistic({
@@ -148,17 +191,20 @@ export function ScheduleCalendar({
         shiftId,
         newStartsAt,
         newEndsAt,
-        newEmployeeId: toEmployeeId,
+        newEmployeeId,
         newEmployeeName,
+        newPositionId,
+        newPosition,
       });
 
       const fd = new FormData();
       fd.append("shiftId", shiftId);
-      fd.append("employeeId", toEmployeeId);
+      fd.append("employeeId", newEmployeeId);
       fd.append("date", toDateISO);
       fd.append("start", formatHHMM(newStartsAt));
       fd.append("end", formatHHMM(newEndsAt));
       if (original.note) fd.append("note", original.note);
+      if (newPositionId) fd.append("positionId", newPositionId);
 
       const result = await updateShiftAction({}, fd);
       if (result.success) {
@@ -183,7 +229,7 @@ export function ScheduleCalendar({
         onCreateClick={() => setCreateOpen(true)}
       />
 
-      {optimisticShifts.length === 0 ? (
+      {filteredShifts.length === 0 ? (
         <EmptyWeekCard
           canMutate={canMutate}
           onAddShift={canMutate ? () => setCreateOpen(true) : undefined}
@@ -193,22 +239,24 @@ export function ScheduleCalendar({
           <div className="hidden md:block">
             <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
               <WeekGridDesktop
-                shifts={optimisticShifts}
+                shifts={filteredShifts}
                 range={range}
                 employees={employees}
+                positions={positions}
                 canMutate={canMutate}
                 onShiftClick={canMutate ? setEditShift : undefined}
                 searchTerm={searchTerm}
-                employeeTotalsMinutes={employeeTotals}
+                rowTotalsMinutes={rowTotals}
                 dayTotalsMinutes={dayTotals}
                 grandTotalMinutes={grandTotal}
+                groupBy={groupBy}
               />
             </DndContext>
           </div>
 
           <div className="md:hidden">
             <WeekStackedMobile
-              shifts={optimisticShifts}
+              shifts={filteredShifts}
               range={range}
               canMutate={canMutate}
               onShiftClick={canMutate ? setEditShift : undefined}
@@ -221,6 +269,7 @@ export function ScheduleCalendar({
         open={createOpen}
         onOpenChange={setCreateOpen}
         employees={employees}
+        positions={positions}
         defaultDate={toISODate(range.start)}
       />
 
@@ -232,6 +281,7 @@ export function ScheduleCalendar({
             if (!o) setEditShift(null);
           }}
           employees={employees}
+          positions={positions}
           defaultDate={toISODate(editShift.startsAt)}
           shift={editShift}
           onDeleteRequest={(s) => setDeleteShift(s)}

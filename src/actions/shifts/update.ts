@@ -15,6 +15,7 @@ const updateSchema = z
     start: z.string().regex(/^\d{2}:\d{2}$/, "Heure de début invalide"),
     end: z.string().regex(/^\d{2}:\d{2}$/, "Heure de fin invalide"),
     note: z.string().max(280, "Note trop longue (280 max)").optional(),
+    positionId: z.string().optional(),
   })
   .refine((d) => d.start !== d.end, {
     message: "Début et fin ne peuvent pas être identiques",
@@ -40,13 +41,15 @@ export async function updateShiftAction(
     start: formData.get("start"),
     end: formData.get("end"),
     note: formData.get("note") || undefined,
+    positionId: formData.get("positionId") || undefined,
   });
 
   if (!parsed.success) {
     return { fieldErrors: parsed.error.flatten().fieldErrors };
   }
 
-  const { shiftId, employeeId, date, start, end, note } = parsed.data;
+  const { shiftId, employeeId, date, start, end, note, positionId } =
+    parsed.data;
   const startsAt = dateTimeFromParts(date, start);
   let endsAt = dateTimeFromParts(date, end);
   if (endsAt <= startsAt) endsAt = addDays(endsAt, 1);
@@ -57,12 +60,15 @@ export async function updateShiftAction(
       startsAt,
       endsAt,
       note: note?.trim() ? note.trim() : null,
+      positionId: positionId && positionId.trim() ? positionId : null,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     if (message === "NOT_FOUND") return { error: "Shift introuvable." };
     if (message === "EMPLOYEE_NOT_FOUND")
       return { error: "Employé introuvable." };
+    if (message === "POSITION_NOT_FOUND")
+      return { error: "Position introuvable." };
     if (message === "OVERLAP")
       return {
         error:
