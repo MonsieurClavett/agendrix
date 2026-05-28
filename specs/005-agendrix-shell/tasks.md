@@ -136,7 +136,7 @@ description: "Task list for the Agendrix-Style Shell feature (Phase 4)"
    - `[Spec Kit] Add tasks` — tasks.md
    - `[Spec Kit] Implementation progress` — all `src/` changes + package.json
    - `[Spec Kit] Mark T030 complete (branch pushed)` — after push
-- [ ] T030 Push: `git push -u origin 005-agendrix-shell`.
+- [X] T030 Push: `git push -u origin 005-agendrix-shell`.
 
 ---
 
