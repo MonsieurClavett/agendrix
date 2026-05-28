@@ -127,7 +127,7 @@ Single Next.js project — paths relative to `Agendrix/` root.
    - `[Spec Kit] Add tasks` — tasks.md
    - `[Spec Kit] Implementation progress` — schema migration + all `src/` changes
    - `[Spec Kit] Mark T027 complete (branch pushed)` — after push
-- [ ] T027 Push the branch: `git push -u origin 003-schedules`.
+- [X] T027 Push the branch: `git push -u origin 003-schedules`.
 
 ---
 
