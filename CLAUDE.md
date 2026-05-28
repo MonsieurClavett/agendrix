@@ -47,13 +47,13 @@ B2B multi-tenant SaaS for employee scheduling (style: Agendrix.com). Single data
 6. `/speckit-implement` — execute
 
 <!-- SPECKIT START -->
-**Active feature**: `002-employee-management`
-**Plan**: [specs/002-employee-management/plan.md](specs/002-employee-management/plan.md)
+**Active feature**: `003-schedules`
+**Plan**: [specs/003-schedules/plan.md](specs/003-schedules/plan.md)
 
 For technical context, structure decisions, the constitution check, and the
 project tree, read the plan above. Companion artifacts in the same folder:
 `spec.md` (what), `research.md` (why this stack), `data-model.md` (entities),
 `contracts/` (page + Server Action contracts), `quickstart.md` (run + smoke).
 
-Previous: `001-multi-tenant-foundations` shipped (see `specs/001-multi-tenant-foundations/`).
+Previous: `001-multi-tenant-foundations`, `002-employee-management` shipped.
 <!-- SPECKIT END -->
