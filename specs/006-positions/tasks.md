@@ -158,7 +158,7 @@ description: "Task list for the Positions feature (Phase 5)"
    - `[Spec Kit] Add tasks` — tasks.md
    - `[Spec Kit] Implementation progress` — all `src/` + prisma + migration + repos + actions + UI
    - `[Spec Kit] Mark T036 complete (branch pushed)` — after push
-- [ ] T036 Push: `git push -u origin 006-positions`.
+- [X] T036 Push: `git push -u origin 006-positions`.
 
 ---
 
