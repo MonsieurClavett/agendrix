@@ -2,11 +2,11 @@
 
 import * as React from "react";
 
+import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import {
   daysOfWeek,
-  formatLongDate,
   isSameLocalDay,
   type WeekRange,
 } from "@/lib/week";
@@ -14,17 +14,37 @@ import { DropCell } from "./DropCell";
 import { ShiftBlock } from "./ShiftBlock";
 import type { WeekShift, Employee } from "./types";
 
-const HOUR_HEIGHT = 56; // px / hour
-const TOTAL_HEIGHT = HOUR_HEIGHT * 24;
-const HOUR_LABELS = Array.from({ length: 25 }, (_, h) => h); // 0..24
+const FRENCH_WEEKDAYS_SHORT = [
+  "Lun.",
+  "Mar.",
+  "Mer.",
+  "Jeu.",
+  "Ven.",
+  "Sam.",
+  "Dim.",
+];
+
+const GRID_COLS = "220px repeat(7, minmax(0, 1fr)) 96px";
 
 type Props = {
   shifts: WeekShift[];
   range: WeekRange;
   employees: Employee[];
   canMutate: boolean;
-  onShiftClick?: (shift: WeekShift) => void;
+  onShiftClick?: (s: WeekShift) => void;
+  searchTerm: string;
+  employeeTotalsMinutes: Map<string, number>;
+  dayTotalsMinutes: number[];
+  grandTotalMinutes: number;
 };
+
+function formatHoursMinutes(minutes: number): string {
+  if (minutes <= 0) return "0h";
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (m === 0) return `${h}h`;
+  return `${h}h${String(m).padStart(2, "0")}`;
+}
 
 export function WeekGridDesktop({
   shifts,
@@ -32,11 +52,13 @@ export function WeekGridDesktop({
   employees,
   canMutate,
   onShiftClick,
+  searchTerm,
+  employeeTotalsMinutes,
+  dayTotalsMinutes,
+  grandTotalMinutes,
 }: Props) {
   const days = daysOfWeek(range.start);
 
-  // Ensure every employee with shifts in the week is represented as a row,
-  // even if they're not in the active picker list (e.g., deactivated).
   const allEmployees: Employee[] = React.useMemo(() => {
     const out = [...employees];
     const known = new Set(out.map((e) => e.id));
@@ -49,75 +71,76 @@ export function WeekGridDesktop({
     return out;
   }, [employees, shifts]);
 
+  const search = searchTerm.trim().toLowerCase();
+  const visibleEmployees = search
+    ? allEmployees.filter((e) =>
+        (e.name ?? "").toLowerCase().includes(search),
+      )
+    : allEmployees;
+
   return (
     <div className="bg-card overflow-x-auto rounded-md border">
-      <div className="min-w-[800px]">
-        {/* Header */}
+      <div className="min-w-[960px]">
+        {/* Header row */}
         <div
-          className="bg-muted/40 grid border-b text-xs font-medium"
-          style={{ gridTemplateColumns: "160px repeat(7, 1fr)" }}
+          className="bg-muted/30 grid border-b text-xs font-medium"
+          style={{ gridTemplateColumns: GRID_COLS }}
         >
-          <div className="border-r p-2 text-muted-foreground uppercase">
+          <div className="text-muted-foreground border-r p-3 uppercase tracking-wide">
             Employé
           </div>
-          {days.map((d) => (
-            <div
-              key={d.toISOString()}
-              className="border-r p-2 text-center last:border-r-0"
-            >
-              {formatLongDate(d)}
+          {days.map((d, i) => (
+            <div key={d.toISOString()} className="border-r p-2 text-center">
+              <div className="text-muted-foreground text-[10px] uppercase tracking-wider">
+                {FRENCH_WEEKDAYS_SHORT[i]}
+              </div>
+              <div className="text-foreground mt-0.5 text-sm font-semibold">
+                {d.getDate()}
+              </div>
             </div>
           ))}
+          <div className="text-muted-foreground p-3 text-right uppercase tracking-wide">
+            Total
+          </div>
         </div>
 
-        {/* Body */}
-        {allEmployees.length === 0 ? (
+        {/* Body rows */}
+        {visibleEmployees.length === 0 ? (
           <div className="text-muted-foreground p-6 text-center text-sm">
-            Aucun employé.
+            Aucun employé ne correspond à votre recherche.
           </div>
         ) : (
-          allEmployees.map((emp) => {
+          visibleEmployees.map((emp) => {
             const empShifts = shifts.filter((s) => s.employeeId === emp.id);
-            const isDeactivated = empShifts.some(
-              (s) => !s.employee.isActive,
-            );
+            const isDeactivated =
+              empShifts.length > 0 &&
+              empShifts.every((s) => !s.employee.isActive);
+            const totalMin = employeeTotalsMinutes.get(emp.id) ?? 0;
             return (
               <div
                 key={emp.id}
                 className="grid border-b last:border-b-0"
-                style={{ gridTemplateColumns: "160px repeat(7, 1fr)" }}
+                style={{ gridTemplateColumns: GRID_COLS }}
               >
-                {/* Employee label column */}
-                <div className="border-r p-2 text-sm">
-                  <div className="font-medium">
-                    {emp.name ?? "(sans nom)"}
-                  </div>
-                  {isDeactivated && (
-                    <Badge variant="destructive" className="mt-1">
-                      désactivé
-                    </Badge>
-                  )}
-                  {/* Hour labels on first column to give a sense of scale */}
-                  <div
-                    className="text-muted-foreground mt-3 hidden flex-col gap-0 text-[10px] sm:flex"
-                    style={{ height: `${TOTAL_HEIGHT}px` }}
-                  >
-                    {HOUR_LABELS.map((h, i) => (
-                      <div
-                        key={h}
-                        className={cn(
-                          "border-border/40 -mt-px border-t pl-1",
-                          i === 0 && "border-t-0",
-                        )}
-                        style={{ height: `${HOUR_HEIGHT}px` }}
-                      >
-                        {String(h).padStart(2, "0")}:00
-                      </div>
-                    ))}
+                <div className="flex items-center gap-3 border-r p-3">
+                  <Avatar name={emp.name} size="md" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="truncate text-sm font-medium">
+                        {emp.name ?? "(sans nom)"}
+                      </p>
+                      {isDeactivated && (
+                        <Badge variant="destructive" className="shrink-0">
+                          désactivé
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-muted-foreground text-xs">
+                      {formatHoursMinutes(totalMin)}
+                    </p>
                   </div>
                 </div>
 
-                {/* 7 day cells */}
                 {days.map((day) => {
                   const cellShifts = empShifts.filter((s) =>
                     isSameLocalDay(s.startsAt, day),
@@ -128,7 +151,6 @@ export function WeekGridDesktop({
                       day={day}
                       employeeId={emp.id}
                       enabled={canMutate}
-                      height={TOTAL_HEIGHT}
                     >
                       {cellShifts.map((s) => (
                         <ShiftBlock
@@ -140,16 +162,43 @@ export function WeekGridDesktop({
                               ? () => onShiftClick(s)
                               : undefined
                           }
-                          hourHeight={HOUR_HEIGHT}
                         />
                       ))}
                     </DropCell>
                   );
                 })}
+
+                <div className="p-3 text-right text-sm font-semibold tabular-nums">
+                  {formatHoursMinutes(totalMin)}
+                </div>
               </div>
             );
           })
         )}
+
+        {/* Footer totals row */}
+        <div
+          className="bg-muted/30 grid border-t text-xs font-medium"
+          style={{ gridTemplateColumns: GRID_COLS }}
+        >
+          <div className="text-muted-foreground border-r p-3 uppercase tracking-wide">
+            Total pour la succursale
+          </div>
+          {dayTotalsMinutes.map((min, i) => (
+            <div
+              key={i}
+              className={cn(
+                "border-r p-3 text-center text-sm font-semibold tabular-nums",
+                min === 0 && "text-muted-foreground/60 font-normal",
+              )}
+            >
+              {formatHoursMinutes(min)}
+            </div>
+          ))}
+          <div className="p-3 text-right text-sm font-bold tabular-nums">
+            {formatHoursMinutes(grandTotalMinutes)}
+          </div>
+        </div>
       </div>
     </div>
   );

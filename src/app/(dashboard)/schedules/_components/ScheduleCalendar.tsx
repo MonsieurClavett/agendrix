@@ -12,15 +12,17 @@ import {
 import { toast } from "sonner";
 
 import { updateShiftAction } from "@/actions/shifts/update";
-import { Button } from "@/components/ui/button";
 import {
+  daysOfWeek,
   formatHHMM,
   formatLongDate,
+  isSameLocalDay,
   toISODate,
   type WeekRange,
 } from "@/lib/week";
 import { DeleteShiftDialog } from "./DeleteShiftDialog";
 import { EmptyWeekCard } from "./EmptyWeekCard";
+import { ScheduleToolbar } from "./ScheduleToolbar";
 import { ShiftDialog } from "./ShiftDialog";
 import { WeekGridDesktop } from "./WeekGridDesktop";
 import { WeekStackedMobile } from "./WeekStackedMobile";
@@ -31,29 +33,31 @@ type Props = {
   range: WeekRange;
   employees: Employee[];
   canMutate: boolean;
+  today: Date;
 };
 
-type OptimisticAction =
-  | {
-      type: "move";
-      shiftId: string;
-      newStartsAt: Date;
-      newEndsAt: Date;
-      newEmployeeId: string;
-      newEmployeeName: string | null;
-    };
+type OptimisticAction = {
+  type: "move";
+  shiftId: string;
+  newStartsAt: Date;
+  newEndsAt: Date;
+  newEmployeeId: string;
+  newEmployeeName: string | null;
+};
 
 export function ScheduleCalendar({
   shifts,
   range,
   employees,
   canMutate,
+  today,
 }: Props) {
   const [createOpen, setCreateOpen] = React.useState(false);
   const [editShift, setEditShift] = React.useState<WeekShift | null>(null);
   const [deleteShift, setDeleteShift] = React.useState<WeekShift | null>(
     null,
   );
+  const [searchTerm, setSearchTerm] = React.useState("");
 
   const [optimisticShifts, dispatchOptimistic] = React.useOptimistic<
     WeekShift[],
@@ -86,6 +90,30 @@ export function ScheduleCalendar({
     useSensor(KeyboardSensor),
   );
 
+  // Compute totals (in minutes) per employee, per day, and the grand total,
+  // all derived from the optimistic shift list so DnD updates them live.
+  const { employeeTotals, dayTotals, grandTotal } = React.useMemo(() => {
+    const days = daysOfWeek(range.start);
+    const employeeTotals = new Map<string, number>();
+    const dayTotals = new Array<number>(7).fill(0);
+    let grandTotal = 0;
+
+    for (const s of optimisticShifts) {
+      const minutes = Math.round(
+        (s.endsAt.getTime() - s.startsAt.getTime()) / 60_000,
+      );
+      employeeTotals.set(
+        s.employeeId,
+        (employeeTotals.get(s.employeeId) ?? 0) + minutes,
+      );
+      const dayIndex = days.findIndex((d) => isSameLocalDay(d, s.startsAt));
+      if (dayIndex >= 0) dayTotals[dayIndex] += minutes;
+      grandTotal += minutes;
+    }
+
+    return { employeeTotals, dayTotals, grandTotal };
+  }, [optimisticShifts, range.start]);
+
   const handleDragEnd = (event: DragEndEvent) => {
     if (!event.over || !canMutate) return;
     const shiftId = String(event.active.id);
@@ -104,7 +132,6 @@ export function ScheduleCalendar({
       return;
     }
 
-    // Preserve time-of-day; only date and assignee change.
     const [yyyy, mm, dd] = toDateISO.split("-").map(Number);
     const newStartsAt = new Date(original.startsAt);
     newStartsAt.setFullYear(yyyy, mm - 1, dd);
@@ -146,12 +173,15 @@ export function ScheduleCalendar({
     `${s.employee.name ?? "(sans nom)"} — ${formatLongDate(s.startsAt)} ${formatHHMM(s.startsAt)}–${formatHHMM(s.endsAt)}`;
 
   return (
-    <>
-      {canMutate && optimisticShifts.length > 0 && (
-        <div className="flex justify-end">
-          <Button onClick={() => setCreateOpen(true)}>Ajouter un shift</Button>
-        </div>
-      )}
+    <div className="space-y-4">
+      <ScheduleToolbar
+        range={range}
+        today={today}
+        canMutate={canMutate}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        onCreateClick={() => setCreateOpen(true)}
+      />
 
       {optimisticShifts.length === 0 ? (
         <EmptyWeekCard
@@ -168,6 +198,10 @@ export function ScheduleCalendar({
                 employees={employees}
                 canMutate={canMutate}
                 onShiftClick={canMutate ? setEditShift : undefined}
+                searchTerm={searchTerm}
+                employeeTotalsMinutes={employeeTotals}
+                dayTotalsMinutes={dayTotals}
+                grandTotalMinutes={grandTotal}
               />
             </DndContext>
           </div>
@@ -183,7 +217,6 @@ export function ScheduleCalendar({
         </>
       )}
 
-      {/* Create dialog */}
       <ShiftDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
@@ -191,7 +224,6 @@ export function ScheduleCalendar({
         defaultDate={toISODate(range.start)}
       />
 
-      {/* Edit dialog (keyed by shift id so state resets between shifts) */}
       {editShift && (
         <ShiftDialog
           key={editShift.id}
@@ -206,7 +238,6 @@ export function ScheduleCalendar({
         />
       )}
 
-      {/* Delete confirm */}
       {deleteShift && (
         <DeleteShiftDialog
           open={true}
@@ -217,6 +248,6 @@ export function ScheduleCalendar({
           summary={buildDeleteSummary(deleteShift)}
         />
       )}
-    </>
+    </div>
   );
 }

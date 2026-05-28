@@ -5,8 +5,8 @@ import {
   listShiftsForUserWeek,
 } from "@/lib/repositories/shift";
 import { parseWeekParam } from "@/lib/week";
+import { FilterPanel } from "./_components/FilterPanel";
 import { ScheduleCalendar } from "./_components/ScheduleCalendar";
-import { WeekNav } from "./_components/WeekNav";
 
 type Props = {
   searchParams: Promise<{ week?: string }>;
@@ -27,26 +27,30 @@ export default async function SchedulesPage({ searchParams }: Props) {
   ]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
         <h1 className="text-2xl font-semibold">
           {isManager ? "Horaires de l'équipe" : "Mes horaires"}
         </h1>
-        <p className="text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           {isManager
             ? "Vue semaine de tous les employés de votre entreprise."
             : "Vos shifts pour la semaine sélectionnée."}
         </p>
       </div>
 
-      <WeekNav range={range} today={today} />
-
-      <ScheduleCalendar
-        shifts={shifts}
-        range={range}
-        employees={employees}
-        canMutate={isManager}
-      />
+      <div className="flex gap-4">
+        <FilterPanel />
+        <div className="min-w-0 flex-1">
+          <ScheduleCalendar
+            shifts={shifts}
+            range={range}
+            employees={employees}
+            canMutate={isManager}
+            today={today}
+          />
+        </div>
+      </div>
     </div>
   );
 }

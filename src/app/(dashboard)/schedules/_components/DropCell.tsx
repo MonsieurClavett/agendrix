@@ -11,17 +11,9 @@ type Props = {
   employeeId: string;
   enabled: boolean;
   children: React.ReactNode;
-  /** Total height of the cell in px (= 24 * hourHeight typically). */
-  height: number;
 };
 
-export function DropCell({
-  day,
-  employeeId,
-  enabled,
-  children,
-  height,
-}: Props) {
+export function DropCell({ day, employeeId, enabled, children }: Props) {
   const id = `${toISODate(day)}|${employeeId}`;
   const droppable = useDroppable({ id, disabled: !enabled });
 
@@ -29,10 +21,9 @@ export function DropCell({
     <div
       ref={enabled ? droppable.setNodeRef : undefined}
       data-cell-id={id}
-      style={{ height: `${height}px` }}
       className={cn(
-        "border-border relative border-r border-b last:border-r-0",
-        droppable.isOver && "bg-accent/40",
+        "border-border flex min-h-[72px] flex-col gap-1.5 border-r border-b p-1.5 last:border-r-0",
+        droppable.isOver && "bg-primary/10",
       )}
     >
       {children}

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 
+import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,7 +37,7 @@ export function WeekStackedMobile({
         return (
           <section
             key={day.toISOString()}
-            className="bg-card rounded-md border p-3"
+            className="bg-card rounded-md border p-4"
           >
             <h3 className="text-sm font-semibold">{formatLongDate(day)}</h3>
             {dayShifts.length === 0 ? (
@@ -44,46 +45,48 @@ export function WeekStackedMobile({
                 Aucun shift
               </p>
             ) : (
-              <ul className="mt-2 space-y-1.5">
+              <ul className="mt-3 space-y-2">
                 {dayShifts.map((s) => {
                   const startStr = formatHHMM(s.startsAt);
                   const endStr = formatHHMM(s.endsAt);
                   const offset = dayDiff(s.startsAt, s.endsAt);
                   const endSuffix = offset > 0 ? ` (+${offset}j)` : "";
+                  const secondary = s.note?.trim() || "Quart";
                   const row = (
-                    <div className="flex w-full items-center justify-between gap-2 text-sm">
-                      <div className="min-w-0 flex-1">
+                    <div className="flex w-full items-center gap-3">
+                      <Avatar name={s.employee.name} size="sm" />
+                      <div className="min-w-0 flex-1 text-left">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium">
+                          <span className="truncate text-sm font-medium">
                             {s.employee.name ?? "(sans nom)"}
                           </span>
                           {!s.employee.isActive && (
                             <Badge variant="destructive">désactivé</Badge>
                           )}
                         </div>
-                        <div className="text-muted-foreground">
-                          {startStr}–{endStr}
-                          {endSuffix}
-                          {s.note && ` — ${s.note}`}
+                        <div className="text-muted-foreground text-xs">
+                          <span className="font-semibold tabular-nums">
+                            {startStr}–{endStr}
+                            {endSuffix}
+                          </span>
+                          {" · "}
+                          {secondary}
                         </div>
                       </div>
                     </div>
                   );
                   return (
-                    <li
-                      key={s.id}
-                      className="border-border/60 rounded-sm border px-2 py-1.5"
-                    >
+                    <li key={s.id}>
                       {canMutate && onShiftClick ? (
                         <Button
-                          variant="ghost"
-                          className="h-auto w-full justify-start p-0 text-left font-normal hover:bg-transparent"
+                          variant="outline"
+                          className="h-auto w-full justify-start p-2 font-normal"
                           onClick={() => onShiftClick(s)}
                         >
                           {row}
                         </Button>
                       ) : (
-                        row
+                        <div className="rounded-md border p-2">{row}</div>
                       )}
                     </li>
                   );
