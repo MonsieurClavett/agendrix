@@ -127,7 +127,7 @@ Single Next.js project — paths relative to `Agendrix/` root.
    - `[Spec Kit] Add tasks` — tasks.md
    - `[Spec Kit] Implementation progress` — all `src/` changes + package.json/package-lock.json
    - `[Spec Kit] Mark T028 complete (branch pushed)` — after push
-- [ ] T028 Push: `git push -u origin 004-calendar-ux`.
+- [X] T028 Push: `git push -u origin 004-calendar-ux`.
 
 ---
 
