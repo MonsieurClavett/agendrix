@@ -57,6 +57,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           user.passwordHash,
         );
         if (!ok) return null;
+        if (!user.isActive) return null;
 
         return {
           id: user.id,

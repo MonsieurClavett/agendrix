@@ -9,18 +9,34 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-export default async function DashboardPage() {
+type Props = {
+  searchParams: Promise<{ error?: string }>;
+};
+
+export default async function DashboardPage({ searchParams }: Props) {
   // Constitution Principle I: every data access starts here. The repos require
   // ctx and inject where: { companyId: ctx.companyId } — no cross-tenant leak
   // is structurally possible unless this layer is bypassed.
   const ctx = await requireTenantContext();
-  const [company, users] = await Promise.all([
+  const [company, users, params] = await Promise.all([
     getCurrentCompany(ctx),
     listUsersInCompany(ctx),
+    searchParams,
   ]);
+
+  const flash =
+    params.error === "forbidden"
+      ? "Vous n'avez pas accès à la gestion d'équipe."
+      : null;
 
   return (
     <div className="space-y-6">
+      {flash && (
+        <div className="border-destructive/40 bg-destructive/10 text-destructive rounded-md border px-4 py-3 text-sm">
+          {flash}
+        </div>
+      )}
+
       <div>
         <h1 className="text-2xl font-semibold">Tableau de bord</h1>
         <p className="text-muted-foreground">
@@ -31,7 +47,7 @@ export default async function DashboardPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Employés ({users.length})</CardTitle>
+          <CardTitle>Employés actifs ({users.length})</CardTitle>
           <CardDescription>
             Démonstration de la couche tenant : ces lignes proviennent
             forcément de votre entreprise — impossible d&apos;en afficher

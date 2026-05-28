@@ -1,6 +1,9 @@
+import Link from "next/link";
+
 import { requireTenantContext } from "@/lib/session";
 import { getCurrentCompany } from "@/lib/repositories/company";
 import { LogoutButton } from "@/components/LogoutButton";
+import { Button } from "@/components/ui/button";
 
 export default async function DashboardLayout({
   children,
@@ -20,7 +23,17 @@ export default async function DashboardLayout({
             </p>
             <p className="font-medium">{company.name}</p>
           </div>
-          <LogoutButton />
+          <div className="flex items-center gap-2">
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/dashboard">Tableau de bord</Link>
+            </Button>
+            {ctx.role === "MANAGER" && (
+              <Button asChild variant="ghost" size="sm">
+                <Link href="/team">Équipe</Link>
+              </Button>
+            )}
+            <LogoutButton />
+          </div>
         </div>
       </header>
       <div className="mx-auto w-full max-w-5xl flex-1 p-6">{children}</div>

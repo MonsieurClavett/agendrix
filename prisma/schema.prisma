@@ -27,6 +27,7 @@ model User {
   passwordHash String
   name         String?
   role         Role     @default(EMPLOYEE)
+  isActive     Boolean  @default(true)
   companyId    String
   company      Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   createdAt    DateTime @default(now())
