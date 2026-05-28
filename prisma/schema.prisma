@@ -14,6 +14,7 @@ model Company {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   users     User[]
+  shifts    Shift[]
 }
 
 enum Role {
@@ -30,8 +31,25 @@ model User {
   isActive     Boolean  @default(true)
   companyId    String
   company      Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  shifts       Shift[]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   @@index([companyId])
+}
+
+model Shift {
+  id         String   @id @default(cuid())
+  companyId  String
+  company    Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employeeId String
+  employee   User     @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  startsAt   DateTime
+  endsAt     DateTime
+  note       String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([companyId, startsAt])
+  @@index([employeeId, startsAt])
 }

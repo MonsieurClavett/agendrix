@@ -27,6 +27,9 @@ export default async function DashboardLayout({
             <Button asChild variant="ghost" size="sm">
               <Link href="/dashboard">Tableau de bord</Link>
             </Button>
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/schedules">Horaires</Link>
+            </Button>
             {ctx.role === "MANAGER" && (
               <Button asChild variant="ghost" size="sm">
                 <Link href="/team">Équipe</Link>
