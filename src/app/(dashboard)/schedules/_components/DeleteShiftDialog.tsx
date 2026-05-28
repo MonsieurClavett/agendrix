@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState, useState, useEffect } from "react";
+import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 import { deleteShiftAction, type DeleteState } from "@/actions/shifts/delete";
 import { Button } from "@/components/ui/button";
@@ -12,19 +13,24 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 
 const initial: DeleteState = {};
 
 type Props = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   shiftId: string;
   summary: string;
 };
 
-export function DeleteShiftDialog({ shiftId, summary }: Props) {
+export function DeleteShiftDialog({
+  open,
+  onOpenChange,
+  shiftId,
+  summary,
+}: Props) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
   const [state, formAction, pending] = useActionState(
     deleteShiftAction,
     initial,
@@ -32,18 +38,16 @@ export function DeleteShiftDialog({ shiftId, summary }: Props) {
 
   useEffect(() => {
     if (state.success && open) {
-      setOpen(false);
+      toast.success("Shift supprimé.");
+      onOpenChange(false);
       router.refresh();
+    } else if (state.error) {
+      toast.error(state.error);
     }
-  }, [state.success, open, router]);
+  }, [state.success, state.error, open, onOpenChange, router]);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button size="sm" variant="destructive">
-          Supprimer
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Supprimer ce shift ?</DialogTitle>
@@ -51,14 +55,11 @@ export function DeleteShiftDialog({ shiftId, summary }: Props) {
         </DialogHeader>
         <form action={formAction}>
           <input type="hidden" name="shiftId" value={shiftId} />
-          {state.error && (
-            <p className="text-destructive mb-3 text-sm">{state.error}</p>
-          )}
           <DialogFooter>
             <Button
               type="button"
               variant="outline"
-              onClick={() => setOpen(false)}
+              onClick={() => onOpenChange(false)}
             >
               Annuler
             </Button>

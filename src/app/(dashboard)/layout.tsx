@@ -3,6 +3,7 @@ import Link from "next/link";
 import { requireTenantContext } from "@/lib/session";
 import { getCurrentCompany } from "@/lib/repositories/company";
 import { LogoutButton } from "@/components/LogoutButton";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { Button } from "@/components/ui/button";
 
 export default async function DashboardLayout({
@@ -35,6 +36,7 @@ export default async function DashboardLayout({
                 <Link href="/team">Équipe</Link>
               </Button>
             )}
+            <ThemeToggle />
             <LogoutButton />
           </div>
         </div>

@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState, useState, useEffect } from "react";
+import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 import { createShiftAction, type CreateState } from "@/actions/shifts/create";
 import { updateShiftAction, type UpdateState } from "@/actions/shifts/update";
@@ -12,35 +13,33 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toISODate, formatHHMM } from "@/lib/week";
-
-type Employee = { id: string; name: string | null };
-
-type ShiftForEdit = {
-  id: string;
-  employeeId: string;
-  startsAt: Date;
-  endsAt: Date;
-  note: string | null;
-};
+import type { Employee, WeekShift } from "./types";
 
 type Props = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   employees: Employee[];
   defaultDate: string;
-  trigger?: React.ReactNode;
-  shift?: ShiftForEdit;
+  shift?: WeekShift | null;
+  onDeleteRequest?: (shift: WeekShift) => void;
 };
 
 const initialCreate: CreateState = {};
 const initialUpdate: UpdateState = {};
 
-export function ShiftDialog({ employees, defaultDate, trigger, shift }: Props) {
+export function ShiftDialog({
+  open,
+  onOpenChange,
+  employees,
+  defaultDate,
+  shift,
+  onDeleteRequest,
+}: Props) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
 
   const [createState, createForm, createPending] = useActionState(
     createShiftAction,
@@ -57,24 +56,27 @@ export function ShiftDialog({ employees, defaultDate, trigger, shift }: Props) {
 
   useEffect(() => {
     if (state.success && open) {
-      setOpen(false);
+      toast.success(shift ? "Shift mis à jour." : "Shift créé.");
+      onOpenChange(false);
       router.refresh();
+    } else if (state.error) {
+      toast.error(state.error);
     }
-  }, [state.success, open, router]);
+  }, [state.success, state.error, open, onOpenChange, router, shift]);
+
+  // Build picker list — for edit, include the current assignee even if
+  // they're deactivated (they wouldn't be in the active picker list).
+  const pickerEmployees: Employee[] =
+    shift && !employees.some((e) => e.id === shift.employeeId)
+      ? [...employees, { id: shift.employeeId, name: shift.employee.name }]
+      : employees;
 
   const initialDate = shift ? toISODate(shift.startsAt) : defaultDate;
   const initialStart = shift ? formatHHMM(shift.startsAt) : "09:00";
   const initialEnd = shift ? formatHHMM(shift.endsAt) : "17:00";
 
-  const defaultTrigger = shift ? (
-    <Button size="sm" variant="outline">Modifier</Button>
-  ) : (
-    <Button>Ajouter un shift</Button>
-  );
-
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{trigger ?? defaultTrigger}</DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
@@ -96,7 +98,7 @@ export function ShiftDialog({ employees, defaultDate, trigger, shift }: Props) {
               <option value="" disabled>
                 — Sélectionner —
               </option>
-              {employees.map((e) => (
+              {pickerEmployees.map((e) => (
                 <option key={e.id} value={e.id}>
                   {e.name ?? "(sans nom)"}
                 </option>
@@ -157,11 +159,21 @@ export function ShiftDialog({ employees, defaultDate, trigger, shift }: Props) {
             />
           </div>
 
-          {state.error && (
-            <p className="text-destructive text-sm">{state.error}</p>
-          )}
-
-          <DialogFooter>
+          <DialogFooter className="sm:justify-between">
+            {shift && onDeleteRequest ? (
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={() => {
+                  onOpenChange(false);
+                  onDeleteRequest(shift);
+                }}
+              >
+                Supprimer
+              </Button>
+            ) : (
+              <div />
+            )}
             <Button type="submit" disabled={pending}>
               {pending
                 ? "Enregistrement…"
