@@ -142,7 +142,7 @@ Single Next.js project — paths are relative to the repository root.
 - [X] T040 [P] Run `npx tsc --noEmit` and confirm zero TypeScript errors across the project.
 - [X] T041 [P] Run `npm run dev`. Visit `/`, `/signup`, `/login`, `/dashboard` in a browser; verify no runtime errors in the dev console and no warnings beyond the expected Next 16 deprecation notices.
 - [ ] T042 Walk through every smoke step in `quickstart.md` (SC-001 → SC-006) end-to-end with the dev server live. Record any deviations as new tasks.
-- [ ] T043 Stage and commit the implementation under a single SDD commit (suggested: `[Spec Kit] Implementation progress`). Push to `origin/001-multi-tenant-foundations`.
+- [X] T043 Stage and commit the implementation under a single SDD commit (suggested: `[Spec Kit] Implementation progress`). Push to `origin/001-multi-tenant-foundations`.
 
 ---
 
