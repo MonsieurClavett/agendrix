@@ -15,6 +15,7 @@ import {
   History,
   BarChart3,
   Edit,
+  ShieldCheck,
 } from "lucide-react";
 
 export type NavItem = {
@@ -60,6 +61,12 @@ export const NAV_ITEMS: NavItem[] = [
     href: "/rapports",
     label: "Rapports",
     icon: BarChart3,
+    managerOnly: true,
+  },
+  {
+    href: "/audit",
+    label: "Audit",
+    icon: ShieldCheck,
     managerOnly: true,
   },
 ];

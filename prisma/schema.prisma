@@ -28,6 +28,7 @@ model Company {
   punchLocations  PunchLocation[]
   punches         Punch[]
   shiftChangeRequests ShiftChangeRequest[]
+  auditLogs       AuditLog[]
 }
 
 enum Role {
@@ -62,6 +63,7 @@ model User {
   punches            Punch[]
   shiftChangeRequests        ShiftChangeRequest[] @relation("ShiftChangeRequester")
   shiftChangeDecisions       ShiftChangeRequest[] @relation("ShiftChangeDecider")
+  auditActions               AuditLog[]           @relation("AuditActor")
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
@@ -408,4 +410,24 @@ model ShiftChangeRequest {
   @@index([companyId, status])
   @@index([employeeId, status])
   @@index([shiftId])
+}
+
+model AuditLog {
+  id            String   @id @default(cuid())
+  companyId     String
+  company       Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  actorUserId   String?
+  actor         User?    @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  actorName     String
+  action        String
+  entityType    String
+  entityId      String?
+  payload       Json?
+  ipAddress     String?
+  userAgent     String?
+  createdAt     DateTime @default(now())
+
+  @@index([companyId, createdAt(sort: Desc)])
+  @@index([companyId, action])
+  @@index([companyId, entityType, entityId])
 }

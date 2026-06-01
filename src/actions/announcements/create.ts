@@ -6,6 +6,7 @@ import { z } from "zod";
 import { requireManagerContext } from "@/lib/session";
 import { createAnnouncement } from "@/lib/repositories/announcement";
 import { sendNotificationEmail } from "@/lib/email";
+import { writeAuditEvent } from "@/lib/repositories/auditLog";
 
 const inputSchema = z.object({
   title: z.string().min(1).max(120),
@@ -62,6 +63,18 @@ export async function createAnnouncementAction(
       }),
     ),
   );
+
+  await writeAuditEvent(ctx, {
+    actorUserId: ctx.userId,
+    actorName: result.authorName ?? "Inconnu",
+    action: "announcement.created",
+    entityType: "Announcement",
+    entityId: result.id,
+    payload: {
+      title: result.title,
+      recipientCount: result.recipients.length,
+    },
+  });
 
   revalidatePath("/annonces");
   revalidatePath("/dashboard");

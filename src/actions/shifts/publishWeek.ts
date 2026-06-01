@@ -9,6 +9,8 @@ import {
   type PublishRecipient,
 } from "@/lib/repositories/shift";
 import { sendNotificationEmail } from "@/lib/email";
+import { writeAuditEvent } from "@/lib/repositories/auditLog";
+import { getCurrentUser } from "@/lib/repositories/user";
 import { parseWeekParam, toISODate } from "@/lib/week";
 
 const inputSchema = z.object({
@@ -40,6 +42,18 @@ export async function publishWeekAction(
   // Fire emails post-commit. Failures are swallowed so the action's
   // user-facing result doesn't depend on Resend availability.
   await emailRecipients(recipients, toISODate(range.start));
+
+  // Audit (best-effort, swallowed on failure).
+  if (count > 0) {
+    const actor = await getCurrentUser(ctx).catch(() => null);
+    await writeAuditEvent(ctx, {
+      actorUserId: ctx.userId,
+      actorName: actor?.name ?? actor?.email ?? "Inconnu",
+      action: "shift.published",
+      entityType: "Shift",
+      payload: { weekStart: toISODate(range.start), count },
+    });
+  }
 
   revalidatePath("/schedules");
   return { success: true, count };

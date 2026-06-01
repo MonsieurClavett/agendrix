@@ -20,6 +20,7 @@ const PROTECTED_PREFIXES = [
   "/rapports",
   "/api/reports",
   "/modifications",
+  "/audit",
 ];
 
 export default auth((req) => {
@@ -54,5 +55,6 @@ export const config = {
     "/rapports/:path*",
     "/api/reports/:path*",
     "/modifications/:path*",
+    "/audit/:path*",
   ],
 };
