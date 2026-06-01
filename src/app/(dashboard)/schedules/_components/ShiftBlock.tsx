@@ -159,9 +159,9 @@ export function ShiftBlock({
       ref={canDrag && preview === null ? draggable.setNodeRef : undefined}
       style={style}
       className={cn(
-        "bg-background hover:bg-accent/40 relative rounded-md border px-2 py-1.5 text-left shadow-xs select-none",
+        "bg-background hover:bg-accent/60 relative rounded-md border px-2 py-1.5 text-left shadow-xs select-none transition-shadow duration-150 hover:shadow-md",
         canDrag && preview === null && "cursor-grab active:cursor-grabbing",
-        draggable.isDragging && "z-30 opacity-60 shadow-lg",
+        draggable.isDragging && "z-30 opacity-60 shadow-xl scale-[1.02]",
         !employeeActive && "border-dashed opacity-70",
         isDraft && "border-dashed opacity-75",
         isOpenShift && "bg-muted/40",

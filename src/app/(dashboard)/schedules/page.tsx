@@ -21,6 +21,7 @@ import { listPendingSwapShiftIds } from "@/lib/repositories/shiftSwap";
 import { listTemplates } from "@/lib/repositories/scheduleTemplate";
 import { buildTimeOffMaps } from "@/lib/timeOff";
 import { parseISODate, parseViewParam, rangeFor } from "@/lib/week";
+import { PageHeader } from "@/components/ui/page-header";
 import { ScheduleView } from "./_components/ScheduleView";
 
 type Props = {
@@ -84,17 +85,16 @@ export default async function SchedulesPage({ searchParams }: Props) {
   const timeOffByEmployee = buildTimeOffMaps(timeOffRows, range);
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-semibold">
-          {isManager ? "Horaires de l'équipe" : "Mes horaires"}
-        </h1>
-        <p className="text-muted-foreground text-sm">
-          {isManager
-            ? "Vue semaine de tous les employés de votre entreprise."
-            : "Vos shifts pour la semaine sélectionnée."}
-        </p>
-      </div>
+    <div className="page-enter space-y-5">
+      <PageHeader
+        eyebrow="Planification"
+        title={isManager ? "Horaires de l'équipe" : "Mes horaires"}
+        description={
+          isManager
+            ? "Vue calendrier de tous les employés de votre entreprise."
+            : "Vos shifts publiés et les actions qui vous concernent."
+        }
+      />
 
       <ScheduleView
         shifts={shifts}

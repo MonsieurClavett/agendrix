@@ -1,5 +1,6 @@
 import { requireManagerContext } from "@/lib/session";
 import { listTemplates } from "@/lib/repositories/scheduleTemplate";
+import { PageHeader } from "@/components/ui/page-header";
 import { TemplatesList } from "./_components/TemplatesList";
 
 export default async function TemplatesPage() {
@@ -7,14 +8,12 @@ export default async function TemplatesPage() {
   const templates = await listTemplates(ctx);
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-semibold">Modèles d&apos;horaire</h1>
-        <p className="text-muted-foreground text-sm">
-          Sauvegardez une semaine type et réappliquez-la sur n&apos;importe quelle
-          autre semaine pour gagner du temps de planification.
-        </p>
-      </div>
+    <div className="page-enter space-y-5">
+      <PageHeader
+        eyebrow="Modèles"
+        title="Modèles d'horaire"
+        description="Sauvegardez une semaine type et réappliquez-la sur n'importe quelle autre semaine pour gagner du temps de planification."
+      />
 
       <TemplatesList
         templates={templates.map((t) => ({

@@ -2,7 +2,10 @@
 
 import * as React from "react";
 
+import { LayoutTemplate } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import { formatLongDate } from "@/lib/week";
 import { RenameTemplateDialog } from "./RenameTemplateDialog";
 import { DeleteTemplateDialog } from "./DeleteTemplateDialog";
@@ -25,13 +28,11 @@ export function TemplatesList({ templates }: Props) {
 
   if (templates.length === 0) {
     return (
-      <div className="bg-card rounded-md border p-8 text-center">
-        <p className="text-sm font-medium">Aucun modèle pour le moment</p>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Ouvrez une semaine d&apos;horaire, puis utilisez « Sauvegarder » dans
-          la barre d&apos;outils pour créer votre premier modèle.
-        </p>
-      </div>
+      <EmptyState
+        icon={<LayoutTemplate className="size-5" />}
+        title="Aucun modèle pour le moment"
+        description="Ouvrez une semaine d'horaire, puis utilisez « Sauvegarder » dans la barre d'outils pour créer votre premier modèle réutilisable."
+      />
     );
   }
 
