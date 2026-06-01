@@ -47,8 +47,8 @@ B2B multi-tenant SaaS for employee scheduling (style: Agendrix.com). Single data
 6. `/speckit-implement` — execute
 
 <!-- SPECKIT START -->
-**Active feature**: `026-audit-log`
-**Plan**: [specs/026-audit-log/plan.md](specs/026-audit-log/plan.md)
+**Active feature**: `027-employee-stats`
+**Plan**: [specs/027-employee-stats/plan.md](specs/027-employee-stats/plan.md)
 
 For technical context, structure decisions, the constitution check, and the
 project tree, read the plan above. Companion artifacts in the same folder:
@@ -64,5 +64,5 @@ Previous: `001-multi-tenant-foundations`, `002-employee-management`,
 `019-employee-preferences`, `020-shift-internal-notes`,
 `021-email-notifications`, `022-clock-in-out`,
 `023-reports-csv`, `024-command-palette`,
-`025-shift-change-requests` shipped.
+`025-shift-change-requests`, `026-audit-log` shipped.
 <!-- SPECKIT END -->

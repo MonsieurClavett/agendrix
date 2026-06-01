@@ -16,6 +16,7 @@ import {
   BarChart3,
   Edit,
   ShieldCheck,
+  Sparkles,
 } from "lucide-react";
 
 export type NavItem = {
@@ -37,6 +38,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/modifications", label: "Modifications", icon: Edit },
   { href: "/annonces", label: "Annonces", icon: Newspaper },
   { href: "/me/pointage", label: "Mes pointages", icon: History },
+  { href: "/me/stats", label: "Mes stats", icon: Sparkles },
   { href: "/team", label: "Équipe", icon: UsersIcon, managerOnly: true },
   { href: "/positions", label: "Positions", icon: TagIcon, managerOnly: true },
   {
