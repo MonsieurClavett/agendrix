@@ -9,9 +9,10 @@ type Props = {
   id: string;
   enabled: boolean;
   children: React.ReactNode;
+  className?: string;
 };
 
-export function DropCell({ id, enabled, children }: Props) {
+export function DropCell({ id, enabled, children, className }: Props) {
   const droppable = useDroppable({ id, disabled: !enabled });
 
   return (
@@ -19,8 +20,9 @@ export function DropCell({ id, enabled, children }: Props) {
       ref={enabled ? droppable.setNodeRef : undefined}
       data-cell-id={id}
       className={cn(
-        "border-border flex min-h-[72px] flex-col gap-1.5 border-r border-b p-1.5 last:border-r-0",
+        "border-border relative flex min-h-[72px] flex-col gap-1.5 border-r border-b p-1.5 last:border-r-0",
         droppable.isOver && "bg-primary/10",
+        className,
       )}
     >
       {children}

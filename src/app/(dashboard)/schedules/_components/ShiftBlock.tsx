@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useDraggable } from "@dnd-kit/core";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, CalendarOff } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { formatHHMM, dayDiff } from "@/lib/week";
@@ -17,6 +17,7 @@ type Props = {
   onClick?: () => void;
   showEmployeeName?: boolean;
   availabilities?: AvailabilityRow[];
+  isOnApprovedTimeOff?: boolean;
 };
 
 export function ShiftBlock({
@@ -25,6 +26,7 @@ export function ShiftBlock({
   onClick,
   showEmployeeName = false,
   availabilities = [],
+  isOnApprovedTimeOff = false,
 }: Props) {
   const startStr = formatHHMM(shift.startsAt);
   const endStr = formatHHMM(shift.endsAt);
@@ -74,18 +76,28 @@ export function ShiftBlock({
         draggable.isDragging && "z-30 opacity-60 shadow-lg",
         !shift.employee.isActive && "border-dashed opacity-70",
         onClick && !canDrag && "cursor-pointer",
-        isOff &&
+        (isOff || isOnApprovedTimeOff) &&
           "ring-1 ring-amber-500/60 dark:ring-amber-400/60",
       )}
       onClick={handleClick}
       {...(canDrag ? draggable.attributes : {})}
       {...(canDrag ? draggable.listeners : {})}
     >
-      {isOff && (
-        <AlertTriangle
-          className="absolute top-1 right-1 size-3 text-amber-600 dark:text-amber-400"
-          aria-label="Hors disponibilités de l'employé"
-        />
+      {(isOff || isOnApprovedTimeOff) && (
+        <div className="absolute top-1 right-1 flex items-center gap-0.5">
+          {isOff && (
+            <AlertTriangle
+              className="size-3 text-amber-600 dark:text-amber-400"
+              aria-label="Hors disponibilités de l'employé"
+            />
+          )}
+          {isOnApprovedTimeOff && (
+            <CalendarOff
+              className="size-3 text-amber-600 dark:text-amber-400"
+              aria-label="Shift planifié pendant un congé approuvé"
+            />
+          )}
+        </div>
       )}
       {showEmployeeName && (
         <div className="text-foreground truncate text-[11px] font-medium">

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, CalendarOff } from "lucide-react";
 
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -13,10 +13,12 @@ import {
   formatLongDate,
   isSameLocalDay,
   dayDiff,
+  toISODate,
   type WeekRange,
 } from "@/lib/week";
 import { isShiftOffAvailability } from "@/lib/availability";
 import type { AvailabilityRow } from "@/lib/repositories/availability";
+import type { TimeOffOverlayMap } from "@/lib/timeOff";
 import type { WeekShift } from "./types";
 
 type Props = {
@@ -25,6 +27,7 @@ type Props = {
   canMutate: boolean;
   onShiftClick?: (shift: WeekShift) => void;
   availabilitiesByEmployee: Map<string, AvailabilityRow[]>;
+  timeOffByEmployee: TimeOffOverlayMap;
 };
 
 export function WeekStackedMobile({
@@ -33,6 +36,7 @@ export function WeekStackedMobile({
   canMutate,
   onShiftClick,
   availabilitiesByEmployee,
+  timeOffByEmployee,
 }: Props) {
   const days = daysOfWeek(range.start);
 
@@ -62,6 +66,10 @@ export function WeekStackedMobile({
                     { startsAt: s.startsAt, endsAt: s.endsAt },
                     availabilitiesByEmployee.get(s.employeeId) ?? [],
                   );
+                  const isOnApprovedTimeOff =
+                    timeOffByEmployee
+                      .get(s.employeeId)
+                      ?.approved.has(toISODate(s.startsAt)) ?? false;
                   const row = (
                     <div className="flex w-full items-center gap-3">
                       <Avatar name={s.employee.name} size="sm" />
@@ -77,6 +85,12 @@ export function WeekStackedMobile({
                             <AlertTriangle
                               className="size-3.5 shrink-0 text-amber-600 dark:text-amber-400"
                               aria-label="Hors disponibilités de l'employé"
+                            />
+                          )}
+                          {isOnApprovedTimeOff && (
+                            <CalendarOff
+                              className="size-3.5 shrink-0 text-amber-600 dark:text-amber-400"
+                              aria-label="Shift planifié pendant un congé approuvé"
                             />
                           )}
                         </div>

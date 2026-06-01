@@ -10,6 +10,8 @@ import {
   listAvailabilitiesForEmployee,
   type AvailabilityRow,
 } from "@/lib/repositories/availability";
+import { listTimeOffOverlappingWeek } from "@/lib/repositories/timeOff";
+import { buildTimeOffMaps } from "@/lib/timeOff";
 import { parseWeekParam } from "@/lib/week";
 import { ScheduleView } from "./_components/ScheduleView";
 
@@ -24,7 +26,7 @@ export default async function SchedulesPage({ searchParams }: Props) {
   const range = parseWeekParam(params.week, today);
   const isManager = ctx.role === "MANAGER";
 
-  const [shifts, employees, positions, allRanges] = await Promise.all([
+  const [shifts, employees, positions, allRanges, timeOffRows] = await Promise.all([
     isManager
       ? listShiftsForCompanyWeek(ctx, range)
       : listShiftsForUserWeek(ctx, ctx.userId, range),
@@ -33,6 +35,7 @@ export default async function SchedulesPage({ searchParams }: Props) {
     isManager
       ? listAvailabilitiesForCompany(ctx)
       : listAvailabilitiesForEmployee(ctx, ctx.userId),
+    listTimeOffOverlappingWeek(ctx, range),
   ]);
 
   const availabilitiesByEmployee = new Map<string, AvailabilityRow[]>();
@@ -41,6 +44,8 @@ export default async function SchedulesPage({ searchParams }: Props) {
     list.push(r);
     availabilitiesByEmployee.set(r.employeeId, list);
   }
+
+  const timeOffByEmployee = buildTimeOffMaps(timeOffRows, range);
 
   return (
     <div className="space-y-4">
@@ -67,6 +72,7 @@ export default async function SchedulesPage({ searchParams }: Props) {
         canMutate={isManager}
         today={today}
         availabilitiesByEmployee={availabilitiesByEmployee}
+        timeOffByEmployee={timeOffByEmployee}
       />
     </div>
   );

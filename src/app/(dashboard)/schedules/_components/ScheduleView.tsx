@@ -4,6 +4,7 @@ import * as React from "react";
 
 import type { WeekRange } from "@/lib/week";
 import type { AvailabilityRow } from "@/lib/repositories/availability";
+import type { TimeOffOverlayMap } from "@/lib/timeOff";
 import { FilterPanel } from "./FilterPanel";
 import { ScheduleCalendar } from "./ScheduleCalendar";
 import type { Employee, PositionOption, WeekShift } from "./types";
@@ -16,6 +17,7 @@ type Props = {
   canMutate: boolean;
   today: Date;
   availabilitiesByEmployee: Map<string, AvailabilityRow[]>;
+  timeOffByEmployee: TimeOffOverlayMap;
 };
 
 export function ScheduleView({
@@ -26,6 +28,7 @@ export function ScheduleView({
   canMutate,
   today,
   availabilitiesByEmployee,
+  timeOffByEmployee,
 }: Props) {
   const [selectedPositionIds, setSelectedPositionIds] = React.useState<
     Set<string>
@@ -73,6 +76,7 @@ export function ScheduleView({
           includeNoneFilter={includeNoneFilter}
           groupBy={groupBy}
           availabilitiesByEmployee={availabilitiesByEmployee}
+          timeOffByEmployee={timeOffByEmployee}
         />
       </div>
     </div>

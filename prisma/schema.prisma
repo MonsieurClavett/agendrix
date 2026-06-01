@@ -9,14 +9,15 @@ datasource db {
 }
 
 model Company {
-  id             String         @id @default(cuid())
-  name           String
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-  users          User[]
-  shifts         Shift[]
-  positions      Position[]
-  availabilities Availability[]
+  id              String           @id @default(cuid())
+  name            String
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  users           User[]
+  shifts          Shift[]
+  positions       Position[]
+  availabilities  Availability[]
+  timeOffRequests TimeOffRequest[]
 }
 
 enum Role {
@@ -25,18 +26,20 @@ enum Role {
 }
 
 model User {
-  id             String         @id @default(cuid())
-  email          String         @unique
-  passwordHash   String
-  name           String?
-  role           Role           @default(EMPLOYEE)
-  isActive       Boolean        @default(true)
-  companyId      String
-  company        Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  shifts         Shift[]
-  availabilities Availability[]
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  id               String           @id @default(cuid())
+  email            String           @unique
+  passwordHash     String
+  name             String?
+  role             Role             @default(EMPLOYEE)
+  isActive         Boolean          @default(true)
+  companyId        String
+  company          Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  shifts           Shift[]
+  availabilities   Availability[]
+  timeOffRequests  TimeOffRequest[] @relation("TimeOffRequester")
+  timeOffDecisions TimeOffRequest[] @relation("TimeOffDecider")
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 
   @@index([companyId])
 }
@@ -87,4 +90,37 @@ model Availability {
   updatedAt   DateTime @updatedAt
 
   @@index([companyId, employeeId, dayOfWeek])
+}
+
+enum TimeOffType {
+  PAID
+  UNPAID
+  SICK
+}
+
+enum TimeOffStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model TimeOffRequest {
+  id              String        @id @default(cuid())
+  companyId       String
+  company         Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employeeId      String
+  employee        User          @relation("TimeOffRequester", fields: [employeeId], references: [id], onDelete: Cascade)
+  startDate       DateTime      @db.Date
+  endDate         DateTime      @db.Date
+  type            TimeOffType
+  reason          String?
+  status          TimeOffStatus @default(PENDING)
+  decidedAt       DateTime?
+  decidedByUserId String?
+  decidedBy       User?         @relation("TimeOffDecider", fields: [decidedByUserId], references: [id], onDelete: SetNull)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([companyId, employeeId, startDate])
+  @@index([companyId, status])
 }

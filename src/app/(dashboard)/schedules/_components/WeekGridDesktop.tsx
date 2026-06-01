@@ -16,6 +16,7 @@ import { DropCell } from "./DropCell";
 import { ShiftBlock } from "./ShiftBlock";
 import type { WeekShift, Employee, PositionOption } from "./types";
 import type { AvailabilityRow } from "@/lib/repositories/availability";
+import type { TimeOffOverlayMap } from "@/lib/timeOff";
 
 const FRENCH_WEEKDAYS_SHORT = [
   "Lun.",
@@ -42,6 +43,7 @@ type Props = {
   grandTotalMinutes: number;
   groupBy: "employee" | "position";
   availabilitiesByEmployee: Map<string, AvailabilityRow[]>;
+  timeOffByEmployee: TimeOffOverlayMap;
 };
 
 function formatHoursMinutes(minutes: number): string {
@@ -65,6 +67,7 @@ export function WeekGridDesktop({
   grandTotalMinutes,
   groupBy,
   availabilitiesByEmployee,
+  timeOffByEmployee,
 }: Props) {
   const days = daysOfWeek(range.start);
 
@@ -81,6 +84,7 @@ export function WeekGridDesktop({
         dayTotalsMinutes={dayTotalsMinutes}
         grandTotalMinutes={grandTotalMinutes}
         availabilitiesByEmployee={availabilitiesByEmployee}
+        timeOffByEmployee={timeOffByEmployee}
       />
     );
   }
@@ -96,6 +100,7 @@ export function WeekGridDesktop({
       dayTotalsMinutes={dayTotalsMinutes}
       grandTotalMinutes={grandTotalMinutes}
       availabilitiesByEmployee={availabilitiesByEmployee}
+      timeOffByEmployee={timeOffByEmployee}
     />
   );
 }
@@ -170,6 +175,7 @@ function EmployeeGrid({
   dayTotalsMinutes,
   grandTotalMinutes,
   availabilitiesByEmployee,
+  timeOffByEmployee,
 }: {
   shifts: WeekShift[];
   days: Date[];
@@ -181,6 +187,7 @@ function EmployeeGrid({
   dayTotalsMinutes: number[];
   grandTotalMinutes: number;
   availabilitiesByEmployee: Map<string, AvailabilityRow[]>;
+  timeOffByEmployee: TimeOffOverlayMap;
 }) {
   const allEmployees: Employee[] = React.useMemo(() => {
     const out = [...employees];
@@ -243,17 +250,46 @@ function EmployeeGrid({
                 </div>
 
                 {days.map((day) => {
+                  const dayISO = toISODate(day);
                   const cellShifts = empShifts.filter((s) =>
                     isSameLocalDay(s.startsAt, day),
                   );
                   const empRanges =
                     availabilitiesByEmployee.get(emp.id) ?? [];
+                  const empTimeOff = timeOffByEmployee.get(emp.id);
+                  const isApprovedOff =
+                    empTimeOff?.approved.has(dayISO) ?? false;
+                  const isPendingOff =
+                    !isApprovedOff &&
+                    (empTimeOff?.pending.has(dayISO) ?? false);
                   return (
                     <DropCell
                       key={`${day.toISOString()}-${emp.id}`}
-                      id={`${toISODate(day)}|emp:${emp.id}`}
+                      id={`${dayISO}|emp:${emp.id}`}
                       enabled={canMutate}
+                      className={cn(
+                        isApprovedOff &&
+                          "bg-amber-50/40 dark:bg-amber-950/20 border border-dashed border-amber-500/40",
+                        isPendingOff &&
+                          "bg-amber-50/20 dark:bg-amber-950/10",
+                      )}
                     >
+                      {isApprovedOff && (
+                        <span
+                          className="text-amber-700 dark:text-amber-300 absolute top-1 left-1 text-[10px] font-medium uppercase tracking-wide"
+                          aria-hidden="true"
+                        >
+                          Congé
+                        </span>
+                      )}
+                      {isPendingOff && (
+                        <span
+                          className="text-amber-600 dark:text-amber-400 absolute top-1 left-1 text-[10px] font-medium"
+                          aria-hidden="true"
+                        >
+                          ?
+                        </span>
+                      )}
                       {cellShifts.map((s) => (
                         <ShiftBlock
                           key={s.id}
@@ -265,6 +301,7 @@ function EmployeeGrid({
                               : undefined
                           }
                           availabilities={empRanges}
+                          isOnApprovedTimeOff={isApprovedOff}
                         />
                       ))}
                     </DropCell>
@@ -298,6 +335,7 @@ function PositionGrid({
   dayTotalsMinutes,
   grandTotalMinutes,
   availabilitiesByEmployee,
+  timeOffByEmployee,
 }: {
   shifts: WeekShift[];
   days: Date[];
@@ -308,6 +346,7 @@ function PositionGrid({
   dayTotalsMinutes: number[];
   grandTotalMinutes: number;
   availabilitiesByEmployee: Map<string, AvailabilityRow[]>;
+  timeOffByEmployee: TimeOffOverlayMap;
 }) {
   // Rows = positions + "none" at the end if there are any untagged shifts
   const hasUntagged = shifts.some((s) => s.positionId === null);
@@ -380,22 +419,30 @@ function PositionGrid({
                       id={`${toISODate(day)}|pos:${row.posId ?? "none"}`}
                       enabled={canMutate}
                     >
-                      {cellShifts.map((s) => (
-                        <ShiftBlock
-                          key={s.id}
-                          shift={s}
-                          canDrag={canMutate}
-                          onClick={
-                            canMutate && onShiftClick
-                              ? () => onShiftClick(s)
-                              : undefined
-                          }
-                          showEmployeeName
-                          availabilities={
-                            availabilitiesByEmployee.get(s.employeeId) ?? []
-                          }
-                        />
-                      ))}
+                      {cellShifts.map((s) => {
+                        const sDayISO = toISODate(s.startsAt);
+                        const sOff =
+                          timeOffByEmployee
+                            .get(s.employeeId)
+                            ?.approved.has(sDayISO) ?? false;
+                        return (
+                          <ShiftBlock
+                            key={s.id}
+                            shift={s}
+                            canDrag={canMutate}
+                            onClick={
+                              canMutate && onShiftClick
+                                ? () => onShiftClick(s)
+                                : undefined
+                            }
+                            showEmployeeName
+                            availabilities={
+                              availabilitiesByEmployee.get(s.employeeId) ?? []
+                            }
+                            isOnApprovedTimeOff={sOff}
+                          />
+                        );
+                      })}
                     </DropCell>
                   );
                 })}

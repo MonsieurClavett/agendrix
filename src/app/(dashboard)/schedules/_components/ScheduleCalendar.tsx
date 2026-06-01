@@ -21,6 +21,7 @@ import {
   type WeekRange,
 } from "@/lib/week";
 import type { AvailabilityRow } from "@/lib/repositories/availability";
+import type { TimeOffOverlayMap } from "@/lib/timeOff";
 import { DeleteShiftDialog } from "./DeleteShiftDialog";
 import { EmptyWeekCard } from "./EmptyWeekCard";
 import { ScheduleToolbar } from "./ScheduleToolbar";
@@ -40,6 +41,7 @@ type Props = {
   includeNoneFilter: boolean;
   groupBy: "employee" | "position";
   availabilitiesByEmployee: Map<string, AvailabilityRow[]>;
+  timeOffByEmployee: TimeOffOverlayMap;
 };
 
 type OptimisticAction = {
@@ -64,6 +66,7 @@ export function ScheduleCalendar({
   includeNoneFilter,
   groupBy,
   availabilitiesByEmployee,
+  timeOffByEmployee,
 }: Props) {
   const [createOpen, setCreateOpen] = React.useState(false);
   const [editShift, setEditShift] = React.useState<WeekShift | null>(null);
@@ -254,6 +257,7 @@ export function ScheduleCalendar({
                 grandTotalMinutes={grandTotal}
                 groupBy={groupBy}
                 availabilitiesByEmployee={availabilitiesByEmployee}
+                timeOffByEmployee={timeOffByEmployee}
               />
             </DndContext>
           </div>
@@ -265,6 +269,7 @@ export function ScheduleCalendar({
               canMutate={canMutate}
               onShiftClick={canMutate ? setEditShift : undefined}
               availabilitiesByEmployee={availabilitiesByEmployee}
+              timeOffByEmployee={timeOffByEmployee}
             />
           </div>
         </>
