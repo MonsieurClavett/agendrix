@@ -17,6 +17,7 @@ import {
   Edit,
   ShieldCheck,
   Sparkles,
+  BadgeCheck,
 } from "lucide-react";
 
 export type NavItem = {
@@ -69,6 +70,12 @@ export const NAV_ITEMS: NavItem[] = [
     href: "/audit",
     label: "Audit",
     icon: ShieldCheck,
+    managerOnly: true,
+  },
+  {
+    href: "/approbation",
+    label: "Approbation",
+    icon: BadgeCheck,
     managerOnly: true,
   },
 ];

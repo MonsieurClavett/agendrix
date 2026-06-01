@@ -85,6 +85,14 @@ export const SHIFT_CHANGE_DECIDED_PAYLOAD = z.object({
   managerNote: z.string().nullable(),
 });
 
+export const TIMESHEET_DECIDED_PAYLOAD = z.object({
+  type: z.literal("TIMESHEET_DECIDED"),
+  status: z.enum(["APPROVED", "REJECTED"]),
+  weekStartISO: z.string(),
+  workedMinutes: z.number(),
+  managerNote: z.string().nullable(),
+});
+
 export const NotificationPayloadSchema = z.discriminatedUnion("type", [
   SHIFT_PUBLISHED_PAYLOAD,
   TIME_OFF_DECIDED_PAYLOAD,
@@ -96,6 +104,7 @@ export const NotificationPayloadSchema = z.discriminatedUnion("type", [
   ANNOUNCEMENT_POSTED_PAYLOAD,
   SHIFT_CHANGE_REQUESTED_PAYLOAD,
   SHIFT_CHANGE_DECIDED_PAYLOAD,
+  TIMESHEET_DECIDED_PAYLOAD,
 ]);
 
 export type NotificationPayload = z.infer<typeof NotificationPayloadSchema>;
@@ -139,6 +148,14 @@ export function renderNotificationLabel(p: NotificationPayload): string {
         : p.managerNote
           ? `Votre demande de modification pour le shift du ${formatISODateFR(p.shiftStartISO)} a été refusée : ${p.managerNote}`
           : `Votre demande de modification pour le shift du ${formatISODateFR(p.shiftStartISO)} a été refusée.`;
+    case "TIMESHEET_DECIDED": {
+      const hours = (p.workedMinutes / 60).toFixed(1).replace(".", ",");
+      return p.status === "APPROVED"
+        ? `Vos heures de la semaine du ${formatISODateFR(p.weekStartISO)} ont été approuvées (${hours}h).`
+        : p.managerNote
+          ? `Vos heures de la semaine du ${formatISODateFR(p.weekStartISO)} sont à revoir : ${p.managerNote}`
+          : `Vos heures de la semaine du ${formatISODateFR(p.weekStartISO)} sont à revoir.`;
+    }
   }
 }
 
@@ -163,6 +180,8 @@ export function renderNotificationHref(
     case "SHIFT_CHANGE_REQUESTED":
     case "SHIFT_CHANGE_DECIDED":
       return "/modifications";
+    case "TIMESHEET_DECIDED":
+      return "/me/pointage";
   }
 }
 
@@ -201,6 +220,10 @@ export function renderNotificationEmailSubject(
       return p.status === "APPROVED"
         ? "Votre demande de modification a été approuvée"
         : "Votre demande de modification a été refusée";
+    case "TIMESHEET_DECIDED":
+      return p.status === "APPROVED"
+        ? "Vos heures ont été approuvées"
+        : "Vos heures sont à revoir";
   }
 }
 

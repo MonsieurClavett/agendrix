@@ -29,6 +29,7 @@ model Company {
   punches         Punch[]
   shiftChangeRequests ShiftChangeRequest[]
   auditLogs       AuditLog[]
+  timesheetApprovals TimesheetApproval[]
 }
 
 enum Role {
@@ -64,6 +65,8 @@ model User {
   shiftChangeRequests        ShiftChangeRequest[] @relation("ShiftChangeRequester")
   shiftChangeDecisions       ShiftChangeRequest[] @relation("ShiftChangeDecider")
   auditActions               AuditLog[]           @relation("AuditActor")
+  timesheets                 TimesheetApproval[]  @relation("TimesheetEmployee")
+  timesheetDecisions         TimesheetApproval[]  @relation("TimesheetDecider")
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
@@ -225,6 +228,7 @@ enum NotificationType {
   ANNOUNCEMENT_POSTED
   SHIFT_CHANGE_REQUESTED
   SHIFT_CHANGE_DECIDED
+  TIMESHEET_DECIDED
 }
 
 model Notification {
@@ -430,4 +434,32 @@ model AuditLog {
   @@index([companyId, createdAt(sort: Desc)])
   @@index([companyId, action])
   @@index([companyId, entityType, entityId])
+}
+
+enum TimesheetApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model TimesheetApproval {
+  id                       String   @id @default(cuid())
+  companyId                String
+  company                  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  weekStart                DateTime @db.Date
+  employeeId               String
+  employee                 User     @relation("TimesheetEmployee", fields: [employeeId], references: [id], onDelete: Cascade)
+  status                   TimesheetApprovalStatus @default(PENDING)
+  scheduledMinutesSnapshot Int
+  workedMinutesSnapshot    Int
+  varianceMinutesSnapshot  Int
+  managerNote              String?
+  decidedByUserId          String?
+  decidedBy                User?    @relation("TimesheetDecider", fields: [decidedByUserId], references: [id], onDelete: SetNull)
+  decidedAt                DateTime?
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  @@unique([companyId, weekStart, employeeId])
+  @@index([companyId, weekStart, status])
 }
