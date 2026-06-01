@@ -9,6 +9,10 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
+import {
+  restrictToFirstScrollableAncestor,
+  restrictToWindowEdges,
+} from "@dnd-kit/modifiers";
 import { toast } from "sonner";
 
 import { updateShiftAction } from "@/actions/shifts/update";
@@ -318,7 +322,11 @@ export function ScheduleCalendar({
       ) : (
         <>
           <div className="hidden md:block">
-            <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+            <DndContext
+              sensors={sensors}
+              onDragEnd={handleDragEnd}
+              modifiers={[restrictToFirstScrollableAncestor, restrictToWindowEdges]}
+            >
               <WeekGridDesktop
                 shifts={filteredShifts}
                 range={range}

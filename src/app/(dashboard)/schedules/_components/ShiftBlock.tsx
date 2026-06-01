@@ -4,7 +4,6 @@ import * as React from "react";
 import { useDraggable } from "@dnd-kit/core";
 import { AlertTriangle, CalendarOff, UserX } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { formatHHMM, dayDiff } from "@/lib/week";
 import { getPositionColor } from "@/lib/positions";
@@ -208,28 +207,21 @@ export function ShiftBlock({
         </div>
       )}
       {isDraft && (
-        <Badge
-          variant="outline"
-          className="border-muted-foreground/40 text-muted-foreground absolute top-1 left-1 h-4 px-1 text-[9px] font-medium uppercase tracking-wide"
-        >
-          Brouillon
-        </Badge>
+        <span
+          aria-label="Brouillon"
+          title="Brouillon"
+          className="absolute top-1.5 left-1.5 size-1.5 rounded-full bg-amber-500 dark:bg-amber-400"
+        />
       )}
       {!isDraft && isInPendingSwap && (
-        <Badge
-          variant="outline"
-          className="border-blue-500/40 text-blue-600 dark:text-blue-400 absolute top-1 left-1 h-4 px-1 text-[9px] font-medium uppercase tracking-wide"
-        >
-          Échange
-        </Badge>
+        <span
+          aria-label="Échange en attente"
+          title="Échange en attente"
+          className="absolute top-1.5 left-1.5 size-1.5 rounded-full bg-blue-500 dark:bg-blue-400"
+        />
       )}
       {showEmployeeName && (
-        <div
-          className={cn(
-            "text-foreground truncate text-[11px] font-medium",
-            isDraft && "pl-14",
-          )}
-        >
+        <div className="text-foreground truncate text-[11px] font-medium">
           {isOpenShift ? (
             <span className="inline-flex items-center gap-1">
               <UserX className="size-3" />
@@ -240,12 +232,7 @@ export function ShiftBlock({
           )}
         </div>
       )}
-      <div
-        className={cn(
-          "text-foreground text-sm font-semibold tabular-nums",
-          isDraft && !showEmployeeName && "pl-14",
-        )}
-      >
+      <div className="text-foreground text-sm font-semibold tabular-nums">
         {startStr}–{endStr}
         {endSuffix}
       </div>
