@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { requireManagerContext } from "@/lib/session";
 import { createAnnouncement } from "@/lib/repositories/announcement";
+import { sendNotificationEmail } from "@/lib/email";
 
 const inputSchema = z.object({
   title: z.string().min(1).max(120),
@@ -28,11 +29,9 @@ export async function createAnnouncementAction(
   });
   if (!parsed.success) return { error: "Données invalides." };
 
+  let result: Awaited<ReturnType<typeof createAnnouncement>>;
   try {
-    await createAnnouncement(ctx, parsed.data);
-    revalidatePath("/annonces");
-    revalidatePath("/dashboard");
-    return { success: true };
+    result = await createAnnouncement(ctx, parsed.data);
   } catch (err) {
     const m = err instanceof Error ? err.message : String(err);
     if (m === "TITLE_REQUIRED") return { error: "Le titre est requis." };
@@ -40,4 +39,31 @@ export async function createAnnouncementAction(
     if (m === "BODY_TOO_LONG") return { error: "Corps trop long (max 2000)." };
     throw err;
   }
+
+  // Post-commit email fan-out — failures are swallowed so they never
+  // break the user-facing action (Constitution Principle: notifications
+  // are best-effort, not blocking).
+  await Promise.allSettled(
+    result.recipients.map((r) =>
+      sendNotificationEmail({
+        to: r.email,
+        recipientName: r.name,
+        payload: {
+          type: "ANNOUNCEMENT_POSTED",
+          announcementId: result.id,
+          title: result.title,
+          authorName: result.authorName,
+        },
+      }).catch((err) => {
+        console.warn(
+          `[announcement-email] failed for ${r.email}:`,
+          err instanceof Error ? err.message : err,
+        );
+      }),
+    ),
+  );
+
+  revalidatePath("/annonces");
+  revalidatePath("/dashboard");
+  return { success: true };
 }

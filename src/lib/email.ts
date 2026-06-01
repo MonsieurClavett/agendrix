@@ -141,25 +141,62 @@ function renderNotificationHtml(input: {
     : "Bonjour,";
   const escapedLabel = escapeHtml(input.label);
   const button = input.link
-    ? `<p style="text-align: center; margin: 24px 0;">
-        <a href="${input.link}"
-           style="background: #0f172a; color: #fff; padding: 10px 20px; border-radius: 6px; text-decoration: none; display: inline-block;">
-          Ouvrir Agendrix
-        </a>
-      </p>`
+    ? `<table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin: 28px auto;">
+        <tr>
+          <td style="border-radius: 8px; background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);">
+            <a href="${input.link}"
+               style="display: inline-block; padding: 12px 24px; color: #ffffff; font-weight: 600; font-size: 14px; text-decoration: none; border-radius: 8px;">
+              Ouvrir Agendrix →
+            </a>
+          </td>
+        </tr>
+      </table>`
     : "";
-  return `
-  <!DOCTYPE html>
-  <html lang="fr">
-    <body style="font-family: -apple-system, system-ui, sans-serif; color: #111; max-width: 560px; margin: 0 auto; padding: 24px;">
-      <p style="line-height: 1.5;">${greeting}</p>
-      <p style="line-height: 1.5;">${escapedLabel}</p>
-      ${button}
-      <p style="color: #555; font-size: 12px; line-height: 1.5;">
-        Vous recevez cet email parce que vous êtes inscrit·e sur Agendrix.
-      </p>
-    </body>
-  </html>`;
+  return `<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Agendrix</title>
+  </head>
+  <body style="margin: 0; padding: 0; background: #f5f5f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #111827;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background: #f5f5f5; padding: 32px 16px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="560" style="background: #ffffff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow: hidden;">
+            <tr>
+              <td style="background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%); padding: 20px 28px;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                  <tr>
+                    <td>
+                      <div style="display: inline-block; width: 32px; height: 32px; border-radius: 8px; background: #ffffff; color: #0891b2; text-align: center; line-height: 32px; font-weight: 700; font-size: 16px; margin-right: 10px; vertical-align: middle;">A</div>
+                      <span style="color: #ffffff; font-size: 18px; font-weight: 600; vertical-align: middle;">Agendrix</span>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 32px 28px 24px;">
+                <p style="margin: 0 0 16px; font-size: 14px; color: #6b7280; line-height: 1.5;">${greeting}</p>
+                <p style="margin: 0; font-size: 16px; color: #111827; line-height: 1.6;">${escapedLabel}</p>
+                ${button}
+              </td>
+            </tr>
+            <tr>
+              <td style="background: #f9fafb; padding: 16px 28px; border-top: 1px solid #e5e7eb;">
+                <p style="margin: 0; color: #6b7280; font-size: 12px; line-height: 1.5;">
+                  Vous recevez cet email parce que vous êtes inscrit·e sur Agendrix —
+                  l'outil de planification d'horaires de votre équipe.
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
 }
 
 function escapeHtml(s: string): string {

@@ -56,10 +56,21 @@ type CreateInput = {
   body: string;
 };
 
+export type AnnouncementRecipient = {
+  id: string;
+  email: string;
+  name: string | null;
+};
+
 export async function createAnnouncement(
   ctx: TenantContext,
   input: CreateInput,
-): Promise<{ id: string; recipientCount: number }> {
+): Promise<{
+  id: string;
+  title: string;
+  authorName: string | null;
+  recipients: AnnouncementRecipient[];
+}> {
   const title = input.title.trim();
   const body = input.body.trim();
   if (!title) throw new Error("TITLE_REQUIRED");
@@ -83,7 +94,7 @@ export async function createAnnouncement(
         isActive: true,
         id: { not: ctx.userId },
       },
-      select: { id: true },
+      select: { id: true, email: true, name: true },
     });
 
     const author = await tx.user.findUnique({
@@ -107,7 +118,12 @@ export async function createAnnouncement(
       })),
     );
 
-    return { id: announcement.id, recipientCount: recipients.length };
+    return {
+      id: announcement.id,
+      title,
+      authorName,
+      recipients,
+    };
   });
 }
 
