@@ -45,6 +45,7 @@ type Props = {
   availabilitiesByEmployee: Map<string, AvailabilityRow[]>;
   timeOffByEmployee: TimeOffOverlayMap;
   pendingSwapShiftIds: Set<string>;
+  onResize?: (shift: WeekShift, newStart: Date, newEnd: Date) => void;
 };
 
 function formatHoursMinutes(minutes: number): string {
@@ -70,6 +71,7 @@ export function WeekGridDesktop({
   availabilitiesByEmployee,
   timeOffByEmployee,
   pendingSwapShiftIds,
+  onResize,
 }: Props) {
   const days = daysOfWeek(range.start);
 
@@ -88,6 +90,7 @@ export function WeekGridDesktop({
         availabilitiesByEmployee={availabilitiesByEmployee}
         timeOffByEmployee={timeOffByEmployee}
         pendingSwapShiftIds={pendingSwapShiftIds}
+        onResize={onResize}
       />
     );
   }
@@ -105,6 +108,7 @@ export function WeekGridDesktop({
       availabilitiesByEmployee={availabilitiesByEmployee}
       timeOffByEmployee={timeOffByEmployee}
       pendingSwapShiftIds={pendingSwapShiftIds}
+      onResize={onResize}
     />
   );
 }
@@ -181,6 +185,7 @@ function EmployeeGrid({
   availabilitiesByEmployee,
   timeOffByEmployee,
   pendingSwapShiftIds,
+  onResize,
 }: {
   shifts: WeekShift[];
   days: Date[];
@@ -194,6 +199,7 @@ function EmployeeGrid({
   availabilitiesByEmployee: Map<string, AvailabilityRow[]>;
   timeOffByEmployee: TimeOffOverlayMap;
   pendingSwapShiftIds: Set<string>;
+  onResize?: (shift: WeekShift, newStart: Date, newEnd: Date) => void;
 }) {
   const openShifts = React.useMemo(
     () => shifts.filter((s) => s.employeeId === null),
@@ -367,6 +373,7 @@ function EmployeeGrid({
                           availabilities={empRanges}
                           isOnApprovedTimeOff={isApprovedOff}
                           isInPendingSwap={pendingSwapShiftIds.has(s.id)}
+                          onResize={onResize}
                         />
                       ))}
                     </DropCell>
@@ -402,6 +409,7 @@ function PositionGrid({
   availabilitiesByEmployee,
   timeOffByEmployee,
   pendingSwapShiftIds,
+  onResize,
 }: {
   shifts: WeekShift[];
   days: Date[];
@@ -414,6 +422,7 @@ function PositionGrid({
   availabilitiesByEmployee: Map<string, AvailabilityRow[]>;
   timeOffByEmployee: TimeOffOverlayMap;
   pendingSwapShiftIds: Set<string>;
+  onResize?: (shift: WeekShift, newStart: Date, newEnd: Date) => void;
 }) {
   // Rows = positions + "none" at the end if there are any untagged shifts
   const hasUntagged = shifts.some((s) => s.positionId === null);
@@ -510,6 +519,7 @@ function PositionGrid({
                             availabilities={sAvail}
                             isOnApprovedTimeOff={sOff}
                             isInPendingSwap={pendingSwapShiftIds.has(s.id)}
+                            onResize={onResize}
                           />
                         );
                       })}

@@ -20,7 +20,16 @@ type Props = {
   availabilities?: AvailabilityRow[];
   isOnApprovedTimeOff?: boolean;
   isInPendingSwap?: boolean;
+  onResize?: (shift: WeekShift, newStart: Date, newEnd: Date) => void;
 };
+
+// Heuristic: 1 day cell is ~240px wide → 1440 minutes / 240px = 6 min/px.
+// Snap is 15 min ⇒ each "step" = 2.5px. Good resolution.
+const DAY_WIDTH_PX_DEFAULT = 240;
+const MINUTES_PER_DAY = 24 * 60;
+const SNAP_MINUTES = 15;
+const MIN_DURATION_MIN = 15;
+const MAX_DURATION_MIN = 24 * 60;
 
 export function ShiftBlock({
   shift,
@@ -30,19 +39,26 @@ export function ShiftBlock({
   availabilities = [],
   isOnApprovedTimeOff = false,
   isInPendingSwap = false,
+  onResize,
 }: Props) {
-  const startStr = formatHHMM(shift.startsAt);
-  const endStr = formatHHMM(shift.endsAt);
-  const offset = dayDiff(shift.startsAt, shift.endsAt);
-  const endSuffix = offset > 0 ? ` (+${offset}j)` : "";
-  const positionName = shift.position?.name;
-  const secondary = positionName || shift.note?.trim() || "Quart";
+  const [preview, setPreview] = React.useState<{
+    start: Date;
+    end: Date;
+  } | null>(null);
 
   const draggable = useDraggable({
     id: shift.id,
     data: shift,
-    disabled: !canDrag,
+    disabled: !canDrag || preview !== null,
   });
+
+  const effective = preview ?? { start: shift.startsAt, end: shift.endsAt };
+  const startStr = formatHHMM(effective.start);
+  const endStr = formatHHMM(effective.end);
+  const offset = dayDiff(effective.start, effective.end);
+  const endSuffix = offset > 0 ? ` (+${offset}j)` : "";
+  const positionName = shift.position?.name;
+  const secondary = positionName || shift.note?.trim() || "Quart";
 
   const baseTransform = draggable.transform
     ? `translate3d(${draggable.transform.x}px, ${draggable.transform.y}px, 0)`
@@ -68,18 +84,83 @@ export function ShiftBlock({
 
   const handleClick = (e: React.MouseEvent) => {
     if (draggable.isDragging) return;
+    if (preview !== null) return;
     if (!onClick) return;
     e.stopPropagation();
     onClick();
   };
 
+  const startResize = (edge: "left" | "right") => (e: React.PointerEvent) => {
+    if (!onResize) return;
+    e.stopPropagation();
+    e.preventDefault();
+    const originX = e.clientX;
+    const originStart = shift.startsAt;
+    const originEnd = shift.endsAt;
+
+    const onMove = (ev: PointerEvent) => {
+      const dx = ev.clientX - originX;
+      const rawMin = (dx / DAY_WIDTH_PX_DEFAULT) * MINUTES_PER_DAY;
+      const snapped = Math.round(rawMin / SNAP_MINUTES) * SNAP_MINUTES;
+      let next: { start: Date; end: Date };
+      if (edge === "right") {
+        const newEndMs = originEnd.getTime() + snapped * 60_000;
+        const minEndMs =
+          originStart.getTime() + MIN_DURATION_MIN * 60_000;
+        const maxEndMs =
+          originStart.getTime() + MAX_DURATION_MIN * 60_000;
+        const clamped = Math.min(maxEndMs, Math.max(minEndMs, newEndMs));
+        next = { start: originStart, end: new Date(clamped) };
+      } else {
+        const newStartMs = originStart.getTime() + snapped * 60_000;
+        const maxStartMs =
+          originEnd.getTime() - MIN_DURATION_MIN * 60_000;
+        const minStartMs =
+          originEnd.getTime() - MAX_DURATION_MIN * 60_000;
+        const clamped = Math.min(maxStartMs, Math.max(minStartMs, newStartMs));
+        next = { start: new Date(clamped), end: originEnd };
+      }
+      setPreview(next);
+    };
+
+    const cleanup = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onCancel);
+    };
+
+    const onUp = () => {
+      cleanup();
+      setPreview((current) => {
+        if (current) {
+          const changed =
+            current.start.getTime() !== originStart.getTime() ||
+            current.end.getTime() !== originEnd.getTime();
+          if (changed) onResize(shift, current.start, current.end);
+        }
+        return null;
+      });
+    };
+
+    const onCancel = () => {
+      cleanup();
+      setPreview(null);
+    };
+
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onCancel);
+  };
+
+  const canResize = !!onResize && canDrag && !isOpenShift;
+
   return (
     <div
-      ref={canDrag ? draggable.setNodeRef : undefined}
+      ref={canDrag && preview === null ? draggable.setNodeRef : undefined}
       style={style}
       className={cn(
         "bg-background hover:bg-accent/40 relative rounded-md border px-2 py-1.5 text-left shadow-xs select-none",
-        canDrag && "cursor-grab active:cursor-grabbing",
+        canDrag && preview === null && "cursor-grab active:cursor-grabbing",
         draggable.isDragging && "z-30 opacity-60 shadow-lg",
         !employeeActive && "border-dashed opacity-70",
         isDraft && "border-dashed opacity-75",
@@ -87,11 +168,29 @@ export function ShiftBlock({
         onClick && !canDrag && "cursor-pointer",
         (isOff || isOnApprovedTimeOff) &&
           "ring-1 ring-amber-500/60 dark:ring-amber-400/60",
+        preview !== null &&
+          "ring-2 ring-primary/70 dark:ring-primary/60 shadow-md",
       )}
       onClick={handleClick}
-      {...(canDrag ? draggable.attributes : {})}
-      {...(canDrag ? draggable.listeners : {})}
+      {...(canDrag && preview === null ? draggable.attributes : {})}
+      {...(canDrag && preview === null ? draggable.listeners : {})}
     >
+      {canResize && (
+        <>
+          <div
+            onPointerDown={startResize("left")}
+            className="absolute top-0 bottom-0 left-0 w-1.5 cursor-ew-resize hover:bg-primary/30 z-10"
+            aria-label="Redimensionner début"
+            role="separator"
+          />
+          <div
+            onPointerDown={startResize("right")}
+            className="absolute top-0 right-0 bottom-0 w-1.5 cursor-ew-resize hover:bg-primary/30 z-10"
+            aria-label="Redimensionner fin"
+            role="separator"
+          />
+        </>
+      )}
       {(isOff || isOnApprovedTimeOff) && (
         <div className="absolute top-1 right-1 flex items-center gap-0.5">
           {isOff && (

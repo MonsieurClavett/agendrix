@@ -5,34 +5,34 @@
 
 ## Phase 1 — Setup
 
-- [ ] T001 Vérifier qu'aucune migration ni dépendance n'est requise (pure UX).
+- [X] T001 Vérifier qu'aucune migration ni dépendance n'est requise (pure UX).
 
 ## Phase 2 — Foundational (helpers)
 
-- [ ] T002 Ajouter une constante locale `DAY_WIDTH_PX_DEFAULT = 240` (ou similaire) dans [src/app/(dashboard)/schedules/_components/ShiftBlock.tsx](src/app/(dashboard)/schedules/_components/ShiftBlock.tsx) avec un commentaire explicatif sur le snap 15 min.
+- [X] T002 Ajouter une constante locale `DAY_WIDTH_PX_DEFAULT = 240` (ou similaire) dans [src/app/(dashboard)/schedules/_components/ShiftBlock.tsx](src/app/(dashboard)/schedules/_components/ShiftBlock.tsx) avec un commentaire explicatif sur le snap 15 min.
 
 ## Phase 3 — User Story 1 (Resize droite) (P1)
 
-- [ ] T003 [US1] Étendre `ShiftBlock` avec une prop optionnelle `onResize?: (shift, newStart, newEnd) => void` et `dayWidthPx?: number`.
-- [ ] T004 [US1] Implémenter dans `ShiftBlock` une poignée droite (`<div>` absolu, 5px, cursor `ew-resize`) avec `onPointerDown/Move/Up` qui calcule un snap 15 min, applique les bornes (≥ 15 min, ≤ 24 h), met à jour un state local `previewRange` et appelle `onResize` au relâchement.
-- [ ] T005 [US1] Étendre le reducer `useOptimistic` dans [ScheduleCalendar.tsx](src/app/(dashboard)/schedules/_components/ScheduleCalendar.tsx) avec un cas `"resize"` (mise à jour de `startsAt`/`endsAt` uniquement).
-- [ ] T006 [US1] Implémenter `handleResizeEnd(shift, newStart, newEnd)` dans `ScheduleCalendar.tsx` : dispatch optimiste puis `updateShiftAction` via `startTransition`, toast success/error.
-- [ ] T007 [US1] Forwarder `onResize` de `ScheduleCalendar` → [WeekGridDesktop.tsx](src/app/(dashboard)/schedules/_components/WeekGridDesktop.tsx) → `ShiftBlock` (les deux sous-composants `EmployeeGrid` et `PositionGrid`).
+- [X] T003 [US1] Étendre `ShiftBlock` avec une prop optionnelle `onResize?: (shift, newStart, newEnd) => void` et `dayWidthPx?: number`.
+- [X] T004 [US1] Implémenter dans `ShiftBlock` une poignée droite (`<div>` absolu, 5px, cursor `ew-resize`) avec `onPointerDown/Move/Up` qui calcule un snap 15 min, applique les bornes (≥ 15 min, ≤ 24 h), met à jour un state local `previewRange` et appelle `onResize` au relâchement.
+- [X] T005 [US1] Étendre le reducer `useOptimistic` dans [ScheduleCalendar.tsx](src/app/(dashboard)/schedules/_components/ScheduleCalendar.tsx) avec un cas `"resize"` (mise à jour de `startsAt`/`endsAt` uniquement).
+- [X] T006 [US1] Implémenter `handleResizeEnd(shift, newStart, newEnd)` dans `ScheduleCalendar.tsx` : dispatch optimiste puis `updateShiftAction` via `startTransition`, toast success/error.
+- [X] T007 [US1] Forwarder `onResize` de `ScheduleCalendar` → [WeekGridDesktop.tsx](src/app/(dashboard)/schedules/_components/WeekGridDesktop.tsx) → `ShiftBlock` (les deux sous-composants `EmployeeGrid` et `PositionGrid`).
 
 ## Phase 4 — User Story 2 (Resize gauche) (P1)
 
-- [ ] T008 [US2] Implémenter dans `ShiftBlock` une poignée gauche symétrique (5px à gauche) qui modifie `startsAt` au lieu de `endsAt`. Mêmes bornes.
+- [X] T008 [US2] Implémenter dans `ShiftBlock` une poignée gauche symétrique (5px à gauche) qui modifie `startsAt` au lieu de `endsAt`. Mêmes bornes.
 
 ## Phase 5 — User Story 3 (Feedback visuel) (P2)
 
-- [ ] T009 [US3] Pendant le drag, faire que `ShiftBlock` affiche son label avec la plage en cours (basée sur `previewRange` plutôt que sur les props), pour montrer en temps réel l'heure cible.
-- [ ] T010 [US3] Ajouter un effet visuel (ring ou bordure mise en évidence) sur `ShiftBlock` pendant que `previewRange !== null`.
+- [X] T009 [US3] Pendant le drag, faire que `ShiftBlock` affiche son label avec la plage en cours (basée sur `previewRange` plutôt que sur les props), pour montrer en temps réel l'heure cible.
+- [X] T010 [US3] Ajouter un effet visuel (ring ou bordure mise en évidence) sur `ShiftBlock` pendant que `previewRange !== null`.
 
 ## Phase 6 — Polish
 
-- [ ] T011 Mettre à jour CLAUDE.md (pointeur de phase active → 015).
-- [ ] T012 `npx tsc --noEmit` ; corriger toute erreur.
-- [ ] T013 `npm run build` ; vérifier que `/schedules` builde correctement.
+- [X] T011 Mettre à jour CLAUDE.md (pointeur de phase active → 015).
+- [X] T012 `npx tsc --noEmit` ; corriger toute erreur.
+- [X] T013 `npm run build` ; vérifier que `/schedules` builde correctement.
 
 ## Dependencies
 

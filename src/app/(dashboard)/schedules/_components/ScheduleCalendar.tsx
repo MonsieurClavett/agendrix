@@ -51,16 +51,23 @@ type Props = {
   templates: TemplateOption[];
 };
 
-type OptimisticAction = {
-  type: "move";
-  shiftId: string;
-  newStartsAt: Date;
-  newEndsAt: Date;
-  newEmployeeId: string;
-  newEmployeeName: string | null;
-  newPositionId: string | null;
-  newPosition: { id: string; name: string; color: string } | null;
-};
+type OptimisticAction =
+  | {
+      type: "move";
+      shiftId: string;
+      newStartsAt: Date;
+      newEndsAt: Date;
+      newEmployeeId: string;
+      newEmployeeName: string | null;
+      newPositionId: string | null;
+      newPosition: { id: string; name: string; color: string } | null;
+    }
+  | {
+      type: "resize";
+      shiftId: string;
+      newStartsAt: Date;
+      newEndsAt: Date;
+    };
 
 export function ScheduleCalendar({
   shifts,
@@ -107,6 +114,13 @@ export function ScheduleCalendar({
               positionId: action.newPositionId,
               position: action.newPosition,
             }
+          : s,
+      );
+    }
+    if (action.type === "resize") {
+      return state.map((s) =>
+        s.id === action.shiftId
+          ? { ...s, startsAt: action.newStartsAt, endsAt: action.newEndsAt }
           : s,
       );
     }
@@ -240,6 +254,39 @@ export function ScheduleCalendar({
     });
   };
 
+  const handleResizeEnd = (
+    shiftToResize: WeekShift,
+    newStartsAt: Date,
+    newEndsAt: Date,
+  ) => {
+    if (!canMutate) return;
+    startTransition(async () => {
+      dispatchOptimistic({
+        type: "resize",
+        shiftId: shiftToResize.id,
+        newStartsAt,
+        newEndsAt,
+      });
+
+      const fd = new FormData();
+      fd.append("shiftId", shiftToResize.id);
+      fd.append("employeeId", shiftToResize.employeeId ?? "");
+      fd.append("date", toISODate(newStartsAt));
+      fd.append("start", formatHHMM(newStartsAt));
+      fd.append("end", formatHHMM(newEndsAt));
+      if (shiftToResize.note) fd.append("note", shiftToResize.note);
+      if (shiftToResize.positionId)
+        fd.append("positionId", shiftToResize.positionId);
+
+      const result = await updateShiftAction({}, fd);
+      if (result.success) {
+        toast.success("Shift redimensionné.");
+      } else if (result.error) {
+        toast.error(result.error);
+      }
+    });
+  };
+
   const buildDeleteSummary = (s: WeekShift) =>
     `${s.employee?.name ?? (s.employeeId ? "(sans nom)" : "Quart à combler")} — ${formatLongDate(s.startsAt)} ${formatHHMM(s.startsAt)}–${formatHHMM(s.endsAt)}`;
 
@@ -280,6 +327,7 @@ export function ScheduleCalendar({
                 availabilitiesByEmployee={availabilitiesByEmployee}
                 timeOffByEmployee={timeOffByEmployee}
                 pendingSwapShiftIds={pendingSwapShiftIds}
+                onResize={canMutate ? handleResizeEnd : undefined}
               />
             </DndContext>
           </div>
