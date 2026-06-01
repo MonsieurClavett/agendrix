@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import type { TenantContext } from "@/lib/session";
 import type { WeekRange } from "@/lib/week";
 import type { TimeOffStatus, TimeOffType } from "@/generated/prisma";
+import { createNotificationsInTx } from "@/lib/repositories/notification";
 
 /**
  * Tenant pattern (Constitution Principle I): every read AND write
@@ -152,11 +153,27 @@ export async function createTimeOff(
   });
 }
 
+export type TimeOffDecisionResult = {
+  row: TimeOffRequestRow;
+  recipient: {
+    employeeId: string;
+    email: string;
+    name: string | null;
+  };
+};
+
+function toISODateLocal(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 export async function decideTimeOff(
   ctx: TenantContext,
   requestId: string,
   decision: "APPROVED" | "REJECTED",
-): Promise<TimeOffRequestRow> {
+): Promise<TimeOffDecisionResult> {
   return db.$transaction(async (tx) => {
     const existing = await tx.timeOffRequest.findFirst({
       where: { id: requestId, companyId: ctx.companyId },
@@ -166,6 +183,8 @@ export async function decideTimeOff(
         status: true,
         startDate: true,
         endDate: true,
+        type: true,
+        employee: { select: { id: true, email: true, name: true } },
       },
     });
     if (!existing) throw new Error("NOT_FOUND");
@@ -187,7 +206,7 @@ export async function decideTimeOff(
       if (conflict) throw new Error("OVERLAP");
     }
 
-    return tx.timeOffRequest.update({
+    const updated = await tx.timeOffRequest.update({
       where: { id: requestId },
       data: {
         status: decision,
@@ -196,6 +215,30 @@ export async function decideTimeOff(
       },
       select: timeOffSelect,
     });
+
+    await createNotificationsInTx(tx, [
+      {
+        companyId: ctx.companyId,
+        recipientUserId: existing.employeeId,
+        type: "TIME_OFF_DECIDED",
+        payload: {
+          type: "TIME_OFF_DECIDED",
+          status: decision,
+          startDate: toISODateLocal(existing.startDate),
+          endDate: toISODateLocal(existing.endDate),
+          timeOffType: existing.type,
+        },
+      },
+    ]);
+
+    return {
+      row: updated,
+      recipient: {
+        employeeId: existing.employee.id,
+        email: existing.employee.email,
+        name: existing.employee.name,
+      },
+    };
   });
 }
 

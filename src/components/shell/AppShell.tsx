@@ -1,5 +1,6 @@
 import { Avatar } from "@/components/ui/avatar";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { NotificationsBell } from "@/components/notifications/NotificationsBell";
 import type { TenantContext } from "@/lib/session";
 import { Sidebar } from "./Sidebar";
 import { MobileSidebar } from "./MobileSidebar";
@@ -39,6 +40,7 @@ export function AppShell({
               </p>
               <p className="truncate text-sm font-semibold">{company.name}</p>
             </div>
+            <NotificationsBell />
             <Avatar name={userName ?? userEmail} size="sm" />
           </header>
 

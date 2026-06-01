@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { requireTenantContext } from "@/lib/session";
 import { decideTimeOff } from "@/lib/repositories/timeOff";
+import { sendNotificationEmail } from "@/lib/email";
 
 const inputSchema = z.object({
   requestId: z.string().min(1),
@@ -30,8 +31,13 @@ export async function decideTimeOffAction(
     return { error: "Décision invalide." };
   }
 
+  let result: Awaited<ReturnType<typeof decideTimeOff>>;
   try {
-    await decideTimeOff(ctx, parsed.data.requestId, parsed.data.decision);
+    result = await decideTimeOff(
+      ctx,
+      parsed.data.requestId,
+      parsed.data.decision,
+    );
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     if (message === "NOT_FOUND") return { error: "Demande introuvable." };
@@ -47,6 +53,25 @@ export async function decideTimeOffAction(
       };
     }
     throw err;
+  }
+
+  try {
+    await sendNotificationEmail({
+      to: result.recipient.email,
+      recipientName: result.recipient.name,
+      payload: {
+        type: "TIME_OFF_DECIDED",
+        status: parsed.data.decision,
+        startDate: result.row.startDate.toISOString().slice(0, 10),
+        endDate: result.row.endDate.toISOString().slice(0, 10),
+        timeOffType: result.row.type,
+      },
+    });
+  } catch (err) {
+    console.warn(
+      `[decideTimeOff] email failed for ${result.recipient.email}:`,
+      err instanceof Error ? err.message : err,
+    );
   }
 
   revalidatePath("/conges");

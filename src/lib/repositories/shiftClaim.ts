@@ -1,6 +1,23 @@
 import { db } from "@/lib/db";
 import type { TenantContext } from "@/lib/session";
 import type { ClaimStatus } from "@/generated/prisma";
+import { createNotificationsInTx } from "@/lib/repositories/notification";
+
+function toISODateLocal(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function mondayISO(d: Date): string {
+  const day = d.getDay();
+  const daysSinceMonday = (day + 6) % 7;
+  const monday = new Date(d);
+  monday.setHours(0, 0, 0, 0);
+  monday.setDate(monday.getDate() - daysSinceMonday);
+  return toISODateLocal(monday);
+}
 
 const claimSelect = {
   id: true,
@@ -148,13 +165,20 @@ export async function cancelClaim(
  *  - CLAIM_NOT_FOUND — claim missing / non-PENDING / wrong shift
  *  - ASSIGNEE_OVERLAP — assignee already booked over that window
  */
+export type AssignOpenShiftRecipient = {
+  employeeId: string;
+  email: string;
+  name: string | null;
+  status: "APPROVED" | "REJECTED";
+};
+
 export async function assignOpenShift(
   ctx: TenantContext,
   shiftId: string,
   chosenClaimId: string,
-): Promise<void> {
+): Promise<{ recipients: AssignOpenShiftRecipient[] }> {
   if (ctx.role !== "MANAGER") throw new Error("FORBIDDEN");
-  await db.$transaction(async (tx) => {
+  return db.$transaction(async (tx) => {
     const shift = await tx.shift.findFirst({
       where: { id: shiftId, companyId: ctx.companyId },
       select: {
@@ -189,6 +213,15 @@ export async function assignOpenShift(
     });
     if (overlap) throw new Error("ASSIGNEE_OVERLAP");
 
+    const peers = await tx.shiftClaim.findMany({
+      where: {
+        shiftId,
+        id: { not: chosenClaimId },
+        status: "PENDING",
+      },
+      select: { employeeId: true },
+    });
+
     const decidedAt = new Date();
 
     await tx.shift.update({
@@ -217,5 +250,63 @@ export async function assignOpenShift(
         decidedByUserId: ctx.userId,
       },
     });
+
+    const affectedUserIds = [
+      claim.employeeId,
+      ...peers.map((p) => p.employeeId),
+    ];
+    const users = await tx.user.findMany({
+      where: { id: { in: affectedUserIds } },
+      select: { id: true, email: true, name: true },
+    });
+    const userById = new Map(users.map((u) => [u.id, u] as const));
+
+    const shiftStartISO = toISODateLocal(shift.startsAt);
+    const shiftEndISO = toISODateLocal(shift.endsAt);
+    const weekStartISO = mondayISO(shift.startsAt);
+
+    await createNotificationsInTx(tx, [
+      {
+        companyId: ctx.companyId,
+        recipientUserId: claim.employeeId,
+        type: "CLAIM_DECIDED",
+        payload: {
+          type: "CLAIM_DECIDED",
+          status: "APPROVED",
+          shiftStartISO,
+          shiftEndISO,
+          weekStartISO,
+        },
+      },
+      ...peers.map((p) => ({
+        companyId: ctx.companyId,
+        recipientUserId: p.employeeId,
+        type: "CLAIM_DECIDED" as const,
+        payload: {
+          type: "CLAIM_DECIDED" as const,
+          status: "REJECTED" as const,
+          shiftStartISO,
+          shiftEndISO,
+          weekStartISO,
+        },
+      })),
+    ]);
+
+    const recipients: AssignOpenShiftRecipient[] = [
+      {
+        employeeId: claim.employeeId,
+        email: userById.get(claim.employeeId)?.email ?? "",
+        name: userById.get(claim.employeeId)?.name ?? null,
+        status: "APPROVED",
+      },
+      ...peers.map((p) => ({
+        employeeId: p.employeeId,
+        email: userById.get(p.employeeId)?.email ?? "",
+        name: userById.get(p.employeeId)?.name ?? null,
+        status: "REJECTED" as const,
+      })),
+    ];
+
+    return { recipients };
   });
 }

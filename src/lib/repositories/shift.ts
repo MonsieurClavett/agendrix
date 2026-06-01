@@ -1,7 +1,8 @@
 import { db } from "@/lib/db";
 import type { TenantContext } from "@/lib/session";
-import type { WeekRange } from "@/lib/week";
+import { toISODate, type WeekRange } from "@/lib/week";
 import type { ShiftStatus } from "@/generated/prisma";
+import { createNotificationsInTx } from "@/lib/repositories/notification";
 
 /**
  * Tenant pattern (Constitution Principle I): every read AND every write
@@ -110,21 +111,93 @@ export async function listOpenShiftsForCompanyWeek(
   });
 }
 
-/** Bulk transition every DRAFT in the visible week to PUBLISHED. Idempotent. */
+export type PublishRecipient = {
+  employeeId: string;
+  email: string;
+  name: string | null;
+  count: number;
+};
+
+/**
+ * Bulk transition every DRAFT in the visible week to PUBLISHED.
+ * Inside a single transaction, also emit one SHIFT_PUBLISHED
+ * notification per affected employee (the trigger-site for Phase 11
+ * US1). The caller is responsible for firing emails post-commit.
+ *
+ * Returns:
+ *  - `count`: total shifts moved DRAFT → PUBLISHED.
+ *  - `recipients`: one entry per affected employee (`employeeId`,
+ *    `email`, `name`, `count`) — `[]` when no shifts moved.
+ */
 export async function publishDraftsForWeek(
   ctx: TenantContext,
   range: WeekRange,
-): Promise<{ count: number }> {
-  const result = await db.shift.updateMany({
-    where: {
+): Promise<{ count: number; recipients: PublishRecipient[] }> {
+  return db.$transaction(async (tx) => {
+    const filter = {
       companyId: ctx.companyId,
-      status: "DRAFT",
+      status: "DRAFT" as const,
       startsAt: { lt: range.end },
       endsAt: { gt: range.start },
-    },
-    data: { status: "PUBLISHED" },
+      employeeId: { not: null },
+    };
+
+    const drafts = await tx.shift.findMany({
+      where: filter,
+      select: { employeeId: true },
+    });
+
+    const countsByEmployee = new Map<string, number>();
+    for (const d of drafts) {
+      if (!d.employeeId) continue;
+      countsByEmployee.set(
+        d.employeeId,
+        (countsByEmployee.get(d.employeeId) ?? 0) + 1,
+      );
+    }
+
+    const result = await tx.shift.updateMany({
+      where: filter,
+      data: { status: "PUBLISHED" },
+    });
+
+    if (countsByEmployee.size === 0) {
+      return { count: result.count, recipients: [] };
+    }
+
+    const employees = await tx.user.findMany({
+      where: {
+        id: { in: [...countsByEmployee.keys()] },
+        companyId: ctx.companyId,
+      },
+      select: { id: true, email: true, name: true },
+    });
+
+    const weekStartISO = toISODate(range.start);
+
+    await createNotificationsInTx(
+      tx,
+      employees.map((e) => ({
+        companyId: ctx.companyId,
+        recipientUserId: e.id,
+        type: "SHIFT_PUBLISHED" as const,
+        payload: {
+          type: "SHIFT_PUBLISHED" as const,
+          shiftCount: countsByEmployee.get(e.id) ?? 0,
+          weekStartISO,
+        },
+      })),
+    );
+
+    const recipients: PublishRecipient[] = employees.map((e) => ({
+      employeeId: e.id,
+      email: e.email,
+      name: e.name,
+      count: countsByEmployee.get(e.id) ?? 0,
+    }));
+
+    return { count: result.count, recipients };
   });
-  return { count: result.count };
 }
 
 /** Reverse a single PUBLISHED shift back to DRAFT. Throws NOT_FOUND otherwise. */
