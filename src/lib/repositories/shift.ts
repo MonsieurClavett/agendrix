@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import type { TenantContext } from "@/lib/session";
 import type { WeekRange } from "@/lib/week";
+import type { ShiftStatus } from "@/generated/prisma";
 
 /**
  * Tenant pattern (Constitution Principle I): every read AND every write
@@ -15,6 +16,7 @@ const shiftSelect = {
   endsAt: true,
   note: true,
   positionId: true,
+  status: true,
   employee: {
     select: { id: true, name: true, isActive: true },
   },
@@ -30,6 +32,7 @@ export type ShiftRow = {
   endsAt: Date;
   note: string | null;
   positionId: string | null;
+  status: ShiftStatus;
   employee: { id: string; name: string | null; isActive: boolean };
   position: { id: string; name: string; color: string } | null;
 };
@@ -50,7 +53,7 @@ export async function listShiftsForCompanyWeek(
   });
 }
 
-/** EMPLOYEE week view: their own shifts only. */
+/** EMPLOYEE week view: their own PUBLISHED shifts only. */
 export async function listShiftsForUserWeek(
   ctx: TenantContext,
   userId: string,
@@ -60,12 +63,61 @@ export async function listShiftsForUserWeek(
     where: {
       companyId: ctx.companyId,
       employeeId: userId,
+      status: "PUBLISHED",
       startsAt: { lt: range.end },
       endsAt: { gt: range.start },
     },
     select: shiftSelect,
     orderBy: [{ startsAt: "asc" }],
   });
+}
+
+/** Count DRAFT shifts inside a given week — drives the "Publier la semaine" button state. */
+export async function countDraftsForCompanyWeek(
+  ctx: TenantContext,
+  range: WeekRange,
+): Promise<number> {
+  return db.shift.count({
+    where: {
+      companyId: ctx.companyId,
+      status: "DRAFT",
+      startsAt: { lt: range.end },
+      endsAt: { gt: range.start },
+    },
+  });
+}
+
+/** Bulk transition every DRAFT in the visible week to PUBLISHED. Idempotent. */
+export async function publishDraftsForWeek(
+  ctx: TenantContext,
+  range: WeekRange,
+): Promise<{ count: number }> {
+  const result = await db.shift.updateMany({
+    where: {
+      companyId: ctx.companyId,
+      status: "DRAFT",
+      startsAt: { lt: range.end },
+      endsAt: { gt: range.start },
+    },
+    data: { status: "PUBLISHED" },
+  });
+  return { count: result.count };
+}
+
+/** Reverse a single PUBLISHED shift back to DRAFT. Throws NOT_FOUND otherwise. */
+export async function unpublishShift(
+  ctx: TenantContext,
+  shiftId: string,
+): Promise<void> {
+  const result = await db.shift.updateMany({
+    where: {
+      id: shiftId,
+      companyId: ctx.companyId,
+      status: "PUBLISHED",
+    },
+    data: { status: "DRAFT" },
+  });
+  if (result.count === 0) throw new Error("NOT_FOUND");
 }
 
 /**

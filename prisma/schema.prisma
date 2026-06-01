@@ -58,23 +58,30 @@ model Position {
   @@index([companyId])
 }
 
+enum ShiftStatus {
+  DRAFT
+  PUBLISHED
+}
+
 model Shift {
-  id         String    @id @default(cuid())
+  id         String      @id @default(cuid())
   companyId  String
-  company    Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company    Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
   employeeId String
-  employee   User      @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  employee   User        @relation(fields: [employeeId], references: [id], onDelete: Restrict)
   positionId String?
-  position   Position? @relation(fields: [positionId], references: [id], onDelete: SetNull)
+  position   Position?   @relation(fields: [positionId], references: [id], onDelete: SetNull)
   startsAt   DateTime
   endsAt     DateTime
   note       String?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  status     ShiftStatus @default(DRAFT)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
 
   @@index([companyId, startsAt])
   @@index([employeeId, startsAt])
   @@index([positionId])
+  @@index([companyId, status])
 }
 
 model Availability {

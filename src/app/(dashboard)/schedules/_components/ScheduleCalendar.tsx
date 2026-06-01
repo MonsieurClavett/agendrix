@@ -42,6 +42,7 @@ type Props = {
   groupBy: "employee" | "position";
   availabilitiesByEmployee: Map<string, AvailabilityRow[]>;
   timeOffByEmployee: TimeOffOverlayMap;
+  draftCount: number;
 };
 
 type OptimisticAction = {
@@ -67,6 +68,7 @@ export function ScheduleCalendar({
   groupBy,
   availabilitiesByEmployee,
   timeOffByEmployee,
+  draftCount,
 }: Props) {
   const [createOpen, setCreateOpen] = React.useState(false);
   const [editShift, setEditShift] = React.useState<WeekShift | null>(null);
@@ -233,6 +235,7 @@ export function ScheduleCalendar({
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
         onCreateClick={() => setCreateOpen(true)}
+        draftCount={draftCount}
       />
 
       {filteredShifts.length === 0 ? (

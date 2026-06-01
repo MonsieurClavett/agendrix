@@ -18,6 +18,7 @@ type Props = {
   today: Date;
   availabilitiesByEmployee: Map<string, AvailabilityRow[]>;
   timeOffByEmployee: TimeOffOverlayMap;
+  draftCount: number;
 };
 
 export function ScheduleView({
@@ -29,6 +30,7 @@ export function ScheduleView({
   today,
   availabilitiesByEmployee,
   timeOffByEmployee,
+  draftCount,
 }: Props) {
   const [selectedPositionIds, setSelectedPositionIds] = React.useState<
     Set<string>
@@ -77,6 +79,7 @@ export function ScheduleView({
           groupBy={groupBy}
           availabilitiesByEmployee={availabilitiesByEmployee}
           timeOffByEmployee={timeOffByEmployee}
+          draftCount={draftCount}
         />
       </div>
     </div>

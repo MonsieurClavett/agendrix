@@ -1,6 +1,7 @@
 import { requireTenantContext } from "@/lib/session";
 import { listUsersInCompany } from "@/lib/repositories/user";
 import {
+  countDraftsForCompanyWeek,
   listShiftsForCompanyWeek,
   listShiftsForUserWeek,
 } from "@/lib/repositories/shift";
@@ -26,7 +27,14 @@ export default async function SchedulesPage({ searchParams }: Props) {
   const range = parseWeekParam(params.week, today);
   const isManager = ctx.role === "MANAGER";
 
-  const [shifts, employees, positions, allRanges, timeOffRows] = await Promise.all([
+  const [
+    shifts,
+    employees,
+    positions,
+    allRanges,
+    timeOffRows,
+    draftCount,
+  ] = await Promise.all([
     isManager
       ? listShiftsForCompanyWeek(ctx, range)
       : listShiftsForUserWeek(ctx, ctx.userId, range),
@@ -36,6 +44,7 @@ export default async function SchedulesPage({ searchParams }: Props) {
       ? listAvailabilitiesForCompany(ctx)
       : listAvailabilitiesForEmployee(ctx, ctx.userId),
     listTimeOffOverlappingWeek(ctx, range),
+    isManager ? countDraftsForCompanyWeek(ctx, range) : Promise.resolve(0),
   ]);
 
   const availabilitiesByEmployee = new Map<string, AvailabilityRow[]>();
@@ -73,6 +82,7 @@ export default async function SchedulesPage({ searchParams }: Props) {
         today={today}
         availabilitiesByEmployee={availabilitiesByEmployee}
         timeOffByEmployee={timeOffByEmployee}
+        draftCount={draftCount}
       />
     </div>
   );

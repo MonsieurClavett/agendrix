@@ -1,4 +1,4 @@
-import type { Role } from "@/generated/prisma";
+import type { Role, ShiftStatus } from "@/generated/prisma";
 
 export type WeekShift = {
   id: string;
@@ -7,6 +7,7 @@ export type WeekShift = {
   endsAt: Date;
   note: string | null;
   positionId: string | null;
+  status: ShiftStatus;
   employee: { id: string; name: string | null; isActive: boolean };
   position: { id: string; name: string; color: string } | null;
 };

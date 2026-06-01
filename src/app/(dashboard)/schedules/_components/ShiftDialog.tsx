@@ -7,6 +7,10 @@ import { toast } from "sonner";
 
 import { createShiftAction, type CreateState } from "@/actions/shifts/create";
 import { updateShiftAction, type UpdateState } from "@/actions/shifts/update";
+import {
+  unpublishShiftAction,
+  type UnpublishShiftState,
+} from "@/actions/shifts/unpublish";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -34,6 +38,7 @@ type Props = {
 
 const initialCreate: CreateState = {};
 const initialUpdate: UpdateState = {};
+const initialUnpublish: UnpublishShiftState = {};
 
 export function ShiftDialog({
   open,
@@ -55,6 +60,10 @@ export function ShiftDialog({
     updateShiftAction,
     initialUpdate,
   );
+  const [unpublishState, unpublishForm, unpublishPending] = useActionState(
+    unpublishShiftAction,
+    initialUnpublish,
+  );
 
   const state = shift ? updateState : createState;
   const formAction = shift ? updateForm : createForm;
@@ -69,6 +78,22 @@ export function ShiftDialog({
       toast.error(state.error);
     }
   }, [state.success, state.error, open, onOpenChange, router, shift]);
+
+  useEffect(() => {
+    if (unpublishState.success && open) {
+      toast.success("Shift dépublié.");
+      onOpenChange(false);
+      router.refresh();
+    } else if (unpublishState.error) {
+      toast.error(unpublishState.error);
+    }
+  }, [
+    unpublishState.success,
+    unpublishState.error,
+    open,
+    onOpenChange,
+    router,
+  ]);
 
   const pickerEmployees: Employee[] =
     shift && !employees.some((e) => e.id === shift.employeeId)
@@ -197,6 +222,23 @@ export function ShiftDialog({
             </Button>
           </DialogFooter>
         </form>
+
+        {shift && shift.status === "PUBLISHED" && (
+          <form action={unpublishForm} className="border-t pt-3">
+            <input type="hidden" name="shiftId" value={shift.id} />
+            <Button
+              type="submit"
+              variant="ghost"
+              size="sm"
+              disabled={unpublishPending}
+              className="w-full"
+            >
+              {unpublishPending
+                ? "Dépublication…"
+                : "Dépublier ce shift (le ramener en brouillon)"}
+            </Button>
+          </form>
+        )}
       </DialogContent>
     </Dialog>
   );

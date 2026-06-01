@@ -4,6 +4,7 @@ import * as React from "react";
 import { useDraggable } from "@dnd-kit/core";
 import { AlertTriangle, CalendarOff } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { formatHHMM, dayDiff } from "@/lib/week";
 import { getPositionColor } from "@/lib/positions";
@@ -53,6 +54,7 @@ export function ShiftBlock({
     { startsAt: shift.startsAt, endsAt: shift.endsAt },
     availabilities,
   );
+  const isDraft = shift.status === "DRAFT";
 
   const style: React.CSSProperties = {
     transform: baseTransform,
@@ -75,6 +77,7 @@ export function ShiftBlock({
         canDrag && "cursor-grab active:cursor-grabbing",
         draggable.isDragging && "z-30 opacity-60 shadow-lg",
         !shift.employee.isActive && "border-dashed opacity-70",
+        isDraft && "border-dashed opacity-75",
         onClick && !canDrag && "cursor-pointer",
         (isOff || isOnApprovedTimeOff) &&
           "ring-1 ring-amber-500/60 dark:ring-amber-400/60",
@@ -99,12 +102,30 @@ export function ShiftBlock({
           )}
         </div>
       )}
+      {isDraft && (
+        <Badge
+          variant="outline"
+          className="border-muted-foreground/40 text-muted-foreground absolute top-1 left-1 h-4 px-1 text-[9px] font-medium uppercase tracking-wide"
+        >
+          Brouillon
+        </Badge>
+      )}
       {showEmployeeName && (
-        <div className="text-foreground truncate text-[11px] font-medium">
+        <div
+          className={cn(
+            "text-foreground truncate text-[11px] font-medium",
+            isDraft && "pl-14",
+          )}
+        >
           {shift.employee.name ?? "(sans nom)"}
         </div>
       )}
-      <div className="text-foreground text-sm font-semibold tabular-nums">
+      <div
+        className={cn(
+          "text-foreground text-sm font-semibold tabular-nums",
+          isDraft && !showEmployeeName && "pl-14",
+        )}
+      >
         {startStr}–{endStr}
         {endSuffix}
       </div>
