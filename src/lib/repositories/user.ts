@@ -16,6 +16,18 @@ export async function listUsersInCompany(ctx: TenantContext) {
   });
 }
 
+/** Phase 24: lightweight list for command palette (cap 200). */
+export async function listEmployeesForPalette(
+  ctx: TenantContext,
+): Promise<{ id: string; name: string | null; email: string }[]> {
+  return db.user.findMany({
+    where: { companyId: ctx.companyId, isActive: true },
+    select: { id: true, name: true, email: true },
+    orderBy: [{ name: "asc" }, { email: "asc" }],
+    take: 200,
+  });
+}
+
 /** Phase 1: team-management page — active AND deactivated, both included. */
 export async function listAllUsersInCompany(ctx: TenantContext) {
   return db.user.findMany({

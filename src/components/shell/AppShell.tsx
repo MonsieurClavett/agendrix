@@ -1,6 +1,9 @@
 import { Avatar } from "@/components/ui/avatar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { NotificationsBell } from "@/components/notifications/NotificationsBell";
+import { CommandPalette } from "@/components/CommandPalette";
+import { CommandPaletteTrigger } from "@/components/CommandPaletteTrigger";
+import { listEmployeesForPalette } from "@/lib/repositories/user";
 import type { TenantContext } from "@/lib/session";
 import { Sidebar } from "./Sidebar";
 import { MobileSidebar } from "./MobileSidebar";
@@ -13,7 +16,7 @@ type Props = {
   children: React.ReactNode;
 };
 
-export function AppShell({
+export async function AppShell({
   ctx,
   company,
   userName,
@@ -21,8 +24,11 @@ export function AppShell({
   children,
 }: Props) {
   const displayName = userName ?? userEmail;
+  const employees =
+    ctx.role === "MANAGER" ? await listEmployeesForPalette(ctx) : [];
   return (
     <TooltipProvider delayDuration={200}>
+      <CommandPalette role={ctx.role} employees={employees} />
       <div className="flex h-full min-h-screen">
         {/* Desktop / tablet sidebar */}
         <div className="hidden md:flex">
@@ -47,6 +53,7 @@ export function AppShell({
               <p className="truncate text-sm font-semibold">{company.name}</p>
             </div>
             <div className="hidden md:block flex-1" />
+            <CommandPaletteTrigger />
             <NotificationsBell />
             <div className="hidden md:flex items-center gap-2.5 rounded-full border bg-card px-2 py-1">
               <Avatar name={displayName} size="sm" />
