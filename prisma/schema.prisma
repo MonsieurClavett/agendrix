@@ -24,6 +24,7 @@ model Company {
   shiftSwaps      ShiftSwap[]
   scheduleTemplates ScheduleTemplate[]
   announcements   Announcement[]
+  employeePreferences EmployeePreference[]
 }
 
 enum Role {
@@ -54,6 +55,7 @@ model User {
   templatesCreated    ScheduleTemplate[]     @relation("TemplateCreator")
   templateShiftAssignments ScheduleTemplateShift[] @relation("TemplateShiftEmployee")
   announcementsAuthored Announcement[]       @relation("AnnouncementAuthor")
+  preferences        EmployeePreference?
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
@@ -312,4 +314,20 @@ model Announcement {
   updatedAt     DateTime @updatedAt
 
   @@index([companyId, isPinned, createdAt(sort: Desc)])
+}
+
+model EmployeePreference {
+  id                String   @id @default(cuid())
+  companyId         String
+  company           Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employeeId        String   @unique
+  employee          User     @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  minHoursPerWeek   Int?
+  maxHoursPerWeek   Int?
+  preferredDays     Int[]    @default([])
+  notes             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([companyId])
 }

@@ -14,6 +14,7 @@ import {
   ArrowRightLeft,
   LayoutTemplate,
   Newspaper,
+  SlidersHorizontal,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -35,6 +36,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Accueil", icon: HomeIcon },
   { href: "/schedules", label: "Horaires", icon: CalendarIcon },
   { href: "/disponibilites", label: "Disponibilités", icon: CalendarCheck },
+  { href: "/preferences", label: "Préférences", icon: SlidersHorizontal },
   { href: "/conges", label: "Congés", icon: PlaneTakeoff },
   { href: "/quarts-a-combler", label: "Quarts à combler", icon: Megaphone },
   { href: "/echanges", label: "Échanges", icon: ArrowRightLeft },

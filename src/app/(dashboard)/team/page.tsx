@@ -5,6 +5,8 @@ import {
   type AvailabilityRow,
 } from "@/lib/repositories/availability";
 import { listInvitationsForCompany } from "@/lib/repositories/invitation";
+import { listPreferencesForCompany } from "@/lib/repositories/employeePreference";
+import { PageHeader } from "@/components/ui/page-header";
 import { InviteEmployeeDialog } from "./_components/InviteEmployeeDialog";
 import { PendingInvitationsList } from "./_components/PendingInvitationsList";
 import { TeamTable } from "./_components/TeamTable";
@@ -14,10 +16,11 @@ export default async function TeamPage() {
   // but the page re-checks because Server Component composition isn't a
   // security boundary on its own.
   const ctx = await requireManagerContext();
-  const [users, allRanges, invitations] = await Promise.all([
+  const [users, allRanges, invitations, prefsMap] = await Promise.all([
     listAllUsersInCompany(ctx),
     listAvailabilitiesForCompany(ctx),
     listInvitationsForCompany(ctx),
+    listPreferencesForCompany(ctx),
   ]);
 
   const rangesByEmployee = new Map<string, AvailabilityRow[]>();
@@ -29,17 +32,32 @@ export default async function TeamPage() {
   const rangesObject: Record<string, AvailabilityRow[]> = {};
   for (const [k, v] of rangesByEmployee.entries()) rangesObject[k] = v;
 
+  const preferencesObject: Record<
+    string,
+    {
+      minHoursPerWeek: number | null;
+      maxHoursPerWeek: number | null;
+      preferredDays: number[];
+      notes: string | null;
+    }
+  > = {};
+  for (const [k, v] of prefsMap.entries()) {
+    preferencesObject[k] = {
+      minHoursPerWeek: v.minHoursPerWeek,
+      maxHoursPerWeek: v.maxHoursPerWeek,
+      preferredDays: v.preferredDays,
+      notes: v.notes,
+    };
+  }
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Équipe</h1>
-          <p className="text-muted-foreground">
-            Gérez les comptes de votre entreprise.
-          </p>
-        </div>
-        <InviteEmployeeDialog />
-      </div>
+    <div className="page-enter space-y-5">
+      <PageHeader
+        eyebrow="Personnel"
+        title="Équipe"
+        description="Gérez les comptes, invitations et préférences de votre entreprise."
+        action={<InviteEmployeeDialog />}
+      />
 
       <PendingInvitationsList invitations={invitations} />
 
@@ -47,6 +65,7 @@ export default async function TeamPage() {
         users={users}
         currentUserId={ctx.userId}
         rangesByEmployee={rangesObject}
+        preferencesByEmployee={preferencesObject}
       />
     </div>
   );

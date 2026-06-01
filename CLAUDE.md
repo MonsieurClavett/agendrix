@@ -47,8 +47,8 @@ B2B multi-tenant SaaS for employee scheduling (style: Agendrix.com). Single data
 6. `/speckit-implement` — execute
 
 <!-- SPECKIT START -->
-**Active feature**: `018-announcements`
-**Plan**: [specs/018-announcements/plan.md](specs/018-announcements/plan.md)
+**Active feature**: `019-employee-preferences`
+**Plan**: [specs/019-employee-preferences/plan.md](specs/019-employee-preferences/plan.md)
 
 For technical context, structure decisions, the constitution check, and the
 project tree, read the plan above. Companion artifacts in the same folder:
@@ -60,5 +60,5 @@ Previous: `001-multi-tenant-foundations`, `002-employee-management`,
 `007-availability`, `008-time-off`, `009-publish-workflow`,
 `010-open-shifts`, `011-email-invitations`, `012-notifications`,
 `013-shift-swaps`, `014-recurring-templates`, `015-drag-resize`,
-`016-multi-views`, `017-ux-polish` shipped.
+`016-multi-views`, `017-ux-polish`, `018-announcements` shipped.
 <!-- SPECKIT END -->

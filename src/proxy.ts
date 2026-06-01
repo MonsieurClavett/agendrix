@@ -12,6 +12,7 @@ const PROTECTED_PREFIXES = [
   "/echanges",
   "/templates",
   "/annonces",
+  "/preferences",
 ];
 
 export default auth((req) => {
@@ -38,5 +39,6 @@ export const config = {
     "/echanges/:path*",
     "/templates/:path*",
     "/annonces/:path*",
+    "/preferences/:path*",
   ],
 };

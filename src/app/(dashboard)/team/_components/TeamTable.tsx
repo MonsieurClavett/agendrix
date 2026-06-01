@@ -15,6 +15,10 @@ import { Badge } from "@/components/ui/badge";
 import { EditEmployeeDialog } from "./EditEmployeeDialog";
 import { SetActiveConfirmDialog } from "./SetActiveConfirmDialog";
 import { EmployeeAvailabilityDialog } from "./EmployeeAvailabilityDialog";
+import {
+  PreferencesPopover,
+  type PreferenceData,
+} from "./PreferencesPopover";
 import type { Role } from "@/generated/prisma";
 import type { AvailabilityRow } from "@/lib/repositories/availability";
 
@@ -30,9 +34,15 @@ type Props = {
   users: TeamUser[];
   currentUserId: string;
   rangesByEmployee: Record<string, AvailabilityRow[]>;
+  preferencesByEmployee: Record<string, PreferenceData>;
 };
 
-export function TeamTable({ users, currentUserId, rangesByEmployee }: Props) {
+export function TeamTable({
+  users,
+  currentUserId,
+  rangesByEmployee,
+  preferencesByEmployee,
+}: Props) {
   const [availabilityFor, setAvailabilityFor] = React.useState<TeamUser | null>(
     null,
   );
@@ -80,6 +90,10 @@ export function TeamTable({ users, currentUserId, rangesByEmployee }: Props) {
                   )}
                 </TableCell>
                 <TableCell className="space-x-2 text-right">
+                  <PreferencesPopover
+                    employeeName={u.name ?? u.email}
+                    preferences={preferencesByEmployee[u.id] ?? null}
+                  />
                   <Button
                     type="button"
                     size="sm"
