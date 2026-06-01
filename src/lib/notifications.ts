@@ -33,10 +33,42 @@ export const CLAIM_DECIDED_PAYLOAD = z.object({
   weekStartISO: z.string(),
 });
 
+export const SWAP_PROPOSED_PAYLOAD = z.object({
+  type: z.literal("SWAP_PROPOSED"),
+  swapId: z.string(),
+  proposerName: z.string().nullable(),
+  proposerShiftStartISO: z.string(),
+  targetShiftStartISO: z.string(),
+});
+
+export const SWAP_ACCEPTED_BY_PEER_PAYLOAD = z.object({
+  type: z.literal("SWAP_ACCEPTED_BY_PEER"),
+  swapId: z.string(),
+  peerName: z.string().nullable(),
+});
+
+export const SWAP_REJECTED_BY_PEER_PAYLOAD = z.object({
+  type: z.literal("SWAP_REJECTED_BY_PEER"),
+  swapId: z.string(),
+  peerName: z.string().nullable(),
+  reason: z.string().nullable(),
+});
+
+export const SWAP_DECIDED_BY_MANAGER_PAYLOAD = z.object({
+  type: z.literal("SWAP_DECIDED_BY_MANAGER"),
+  swapId: z.string(),
+  decision: z.enum(["APPROVED", "REJECTED"]),
+  reason: z.string().nullable(),
+});
+
 export const NotificationPayloadSchema = z.discriminatedUnion("type", [
   SHIFT_PUBLISHED_PAYLOAD,
   TIME_OFF_DECIDED_PAYLOAD,
   CLAIM_DECIDED_PAYLOAD,
+  SWAP_PROPOSED_PAYLOAD,
+  SWAP_ACCEPTED_BY_PEER_PAYLOAD,
+  SWAP_REJECTED_BY_PEER_PAYLOAD,
+  SWAP_DECIDED_BY_MANAGER_PAYLOAD,
 ]);
 
 export type NotificationPayload = z.infer<typeof NotificationPayloadSchema>;
@@ -54,6 +86,20 @@ export function renderNotificationLabel(p: NotificationPayload): string {
       return p.status === "APPROVED"
         ? `Votre demande pour le quart du ${formatISODateFR(p.shiftStartISO)} a été approuvée.`
         : `Votre demande pour le quart du ${formatISODateFR(p.shiftStartISO)} a été refusée.`;
+    case "SWAP_PROPOSED":
+      return `${p.proposerName ?? "Un collègue"} souhaite échanger son shift du ${formatISODateFR(p.proposerShiftStartISO)} contre votre shift du ${formatISODateFR(p.targetShiftStartISO)}.`;
+    case "SWAP_ACCEPTED_BY_PEER":
+      return `${p.peerName ?? "Votre collègue"} a accepté votre proposition d'échange. En attente du gestionnaire.`;
+    case "SWAP_REJECTED_BY_PEER":
+      return p.reason
+        ? `${p.peerName ?? "Votre collègue"} a refusé votre proposition : ${p.reason}`
+        : `${p.peerName ?? "Votre collègue"} a refusé votre proposition d'échange.`;
+    case "SWAP_DECIDED_BY_MANAGER":
+      return p.decision === "APPROVED"
+        ? "Votre échange a été approuvé."
+        : p.reason
+          ? `Votre échange a été refusé : ${p.reason}`
+          : "Votre échange a été refusé.";
   }
 }
 
@@ -68,6 +114,11 @@ export function renderNotificationHref(
       return "/conges";
     case "CLAIM_DECIDED":
       return `/schedules?week=${p.weekStartISO}`;
+    case "SWAP_PROPOSED":
+    case "SWAP_ACCEPTED_BY_PEER":
+    case "SWAP_REJECTED_BY_PEER":
+    case "SWAP_DECIDED_BY_MANAGER":
+      return "/echanges";
   }
 }
 
@@ -88,6 +139,16 @@ export function renderNotificationEmailSubject(
       return p.status === "APPROVED"
         ? "Votre demande de quart a été approuvée"
         : "Votre demande de quart a été refusée";
+    case "SWAP_PROPOSED":
+      return "Proposition d'échange de shift";
+    case "SWAP_ACCEPTED_BY_PEER":
+      return "Votre proposition d'échange a été acceptée";
+    case "SWAP_REJECTED_BY_PEER":
+      return "Votre proposition d'échange a été refusée";
+    case "SWAP_DECIDED_BY_MANAGER":
+      return p.decision === "APPROVED"
+        ? "Votre échange a été approuvé"
+        : "Votre échange a été refusé";
   }
 }
 

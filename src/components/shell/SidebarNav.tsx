@@ -11,6 +11,7 @@ import {
   CalendarCheck,
   PlaneTakeoff,
   Megaphone,
+  ArrowRightLeft,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -34,6 +35,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/disponibilites", label: "Disponibilités", icon: CalendarCheck },
   { href: "/conges", label: "Congés", icon: PlaneTakeoff },
   { href: "/quarts-a-combler", label: "Quarts à combler", icon: Megaphone },
+  { href: "/echanges", label: "Échanges", icon: ArrowRightLeft },
   { href: "/team", label: "Équipe", icon: UsersIcon, managerOnly: true },
   { href: "/positions", label: "Positions", icon: TagIcon, managerOnly: true },
 ];

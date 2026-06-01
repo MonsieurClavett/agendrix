@@ -21,6 +21,7 @@ model Company {
   shiftClaims     ShiftClaim[]
   invitations     Invitation[]
   notifications   Notification[]
+  shiftSwaps      ShiftSwap[]
 }
 
 enum Role {
@@ -45,6 +46,9 @@ model User {
   shiftDecisions   ShiftClaim[]     @relation("ShiftClaimDecider")
   sentInvitations  Invitation[]     @relation("Inviter")
   notifications    Notification[]   @relation("NotificationRecipient")
+  swapsProposed       ShiftSwap[]   @relation("SwapProposer")
+  swapsTargeted       ShiftSwap[]   @relation("SwapTarget")
+  swapsManagerDecided ShiftSwap[]   @relation("SwapManagerDecider")
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
@@ -71,20 +75,22 @@ enum ShiftStatus {
 }
 
 model Shift {
-  id         String       @id @default(cuid())
-  companyId  String
-  company    Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  employeeId String?
-  employee   User?        @relation(fields: [employeeId], references: [id], onDelete: Restrict)
-  positionId String?
-  position   Position?    @relation(fields: [positionId], references: [id], onDelete: SetNull)
-  startsAt   DateTime
-  endsAt     DateTime
-  note       String?
-  status     ShiftStatus  @default(DRAFT)
-  claims     ShiftClaim[]
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
+  id              String       @id @default(cuid())
+  companyId       String
+  company         Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employeeId      String?
+  employee        User?        @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  positionId      String?
+  position        Position?    @relation(fields: [positionId], references: [id], onDelete: SetNull)
+  startsAt        DateTime
+  endsAt          DateTime
+  note            String?
+  status          ShiftStatus  @default(DRAFT)
+  claims          ShiftClaim[]
+  swapsAsProposer ShiftSwap[]  @relation("SwapProposerShift")
+  swapsAsTarget   ShiftSwap[]  @relation("SwapTargetShift")
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
   @@index([companyId, startsAt])
   @@index([employeeId, startsAt])
@@ -194,6 +200,10 @@ enum NotificationType {
   SHIFT_PUBLISHED
   TIME_OFF_DECIDED
   CLAIM_DECIDED
+  SWAP_PROPOSED
+  SWAP_ACCEPTED_BY_PEER
+  SWAP_REJECTED_BY_PEER
+  SWAP_DECIDED_BY_MANAGER
 }
 
 model Notification {
@@ -210,4 +220,41 @@ model Notification {
 
   @@index([recipientUserId, createdAt(sort: Desc)])
   @@index([recipientUserId, readAt])
+}
+
+enum SwapStatus {
+  PENDING_PEER
+  PENDING_MANAGER
+  APPROVED
+  REJECTED_BY_PEER
+  REJECTED_BY_MANAGER
+  CANCELED_BY_PROPOSER
+}
+
+model ShiftSwap {
+  id                      String     @id @default(cuid())
+  companyId               String
+  company                 Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  proposerUserId          String
+  proposerUser            User       @relation("SwapProposer", fields: [proposerUserId], references: [id], onDelete: Cascade)
+  proposerShiftId         String
+  proposerShift           Shift      @relation("SwapProposerShift", fields: [proposerShiftId], references: [id], onDelete: Cascade)
+  targetUserId            String
+  targetUser              User       @relation("SwapTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
+  targetShiftId           String
+  targetShift             Shift      @relation("SwapTargetShift", fields: [targetShiftId], references: [id], onDelete: Cascade)
+  proposerMessage         String?
+  status                  SwapStatus @default(PENDING_PEER)
+  peerDecidedAt           DateTime?
+  peerRejectionReason     String?
+  managerDecidedAt        DateTime?
+  managerDecidedByUserId  String?
+  managerDecidedBy        User?      @relation("SwapManagerDecider", fields: [managerDecidedByUserId], references: [id], onDelete: SetNull)
+  managerRejectionReason  String?
+  createdAt               DateTime   @default(now())
+  updatedAt               DateTime   @updatedAt
+
+  @@index([companyId, status])
+  @@index([proposerUserId, status])
+  @@index([targetUserId, status])
 }

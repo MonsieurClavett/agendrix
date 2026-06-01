@@ -28,6 +28,7 @@ type Props = {
   onShiftClick?: (shift: WeekShift) => void;
   availabilitiesByEmployee: Map<string, AvailabilityRow[]>;
   timeOffByEmployee: TimeOffOverlayMap;
+  pendingSwapShiftIds: Set<string>;
 };
 
 export function WeekStackedMobile({
@@ -37,6 +38,7 @@ export function WeekStackedMobile({
   onShiftClick,
   availabilitiesByEmployee,
   timeOffByEmployee,
+  pendingSwapShiftIds,
 }: Props) {
   const days = daysOfWeek(range.start);
 
@@ -80,6 +82,7 @@ export function WeekStackedMobile({
                           .get(s.employeeId)
                           ?.approved.has(toISODate(s.startsAt)) ?? false
                       : false;
+                  const isInPendingSwap = pendingSwapShiftIds.has(s.id);
                   const row = (
                     <div className="flex w-full items-center gap-3">
                       <Avatar name={displayName} size="sm" />
@@ -102,6 +105,14 @@ export function WeekStackedMobile({
                               className="size-3.5 shrink-0 text-amber-600 dark:text-amber-400"
                               aria-label="Shift planifié pendant un congé approuvé"
                             />
+                          )}
+                          {isInPendingSwap && (
+                            <Badge
+                              variant="outline"
+                              className="border-blue-500/40 text-blue-600 dark:text-blue-400"
+                            >
+                              Échange
+                            </Badge>
                           )}
                         </div>
                         <div className="text-muted-foreground text-xs">

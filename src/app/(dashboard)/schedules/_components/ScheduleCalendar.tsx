@@ -45,6 +45,8 @@ type Props = {
   timeOffByEmployee: TimeOffOverlayMap;
   draftCount: number;
   claimsByShift: Map<string, ClaimRow[]>;
+  pendingSwapShiftIds: Set<string>;
+  currentUserId: string;
 };
 
 type OptimisticAction = {
@@ -72,6 +74,8 @@ export function ScheduleCalendar({
   timeOffByEmployee,
   draftCount,
   claimsByShift,
+  pendingSwapShiftIds,
+  currentUserId,
 }: Props) {
   const [createOpen, setCreateOpen] = React.useState(false);
   const [editShift, setEditShift] = React.useState<WeekShift | null>(null);
@@ -263,7 +267,7 @@ export function ScheduleCalendar({
                 employees={employees}
                 positions={positions}
                 canMutate={canMutate}
-                onShiftClick={canMutate ? setEditShift : undefined}
+                onShiftClick={setEditShift}
                 searchTerm={searchTerm}
                 rowTotalsMinutes={rowTotals}
                 dayTotalsMinutes={dayTotals}
@@ -271,6 +275,7 @@ export function ScheduleCalendar({
                 groupBy={groupBy}
                 availabilitiesByEmployee={availabilitiesByEmployee}
                 timeOffByEmployee={timeOffByEmployee}
+                pendingSwapShiftIds={pendingSwapShiftIds}
               />
             </DndContext>
           </div>
@@ -280,9 +285,10 @@ export function ScheduleCalendar({
               shifts={filteredShifts}
               range={range}
               canMutate={canMutate}
-              onShiftClick={canMutate ? setEditShift : undefined}
+              onShiftClick={setEditShift}
               availabilitiesByEmployee={availabilitiesByEmployee}
               timeOffByEmployee={timeOffByEmployee}
+              pendingSwapShiftIds={pendingSwapShiftIds}
             />
           </div>
         </>
@@ -294,6 +300,7 @@ export function ScheduleCalendar({
         employees={employees}
         positions={positions}
         defaultDate={toISODate(range.start)}
+        currentUserId={currentUserId}
       />
 
       {editShift && (
@@ -307,8 +314,10 @@ export function ScheduleCalendar({
           positions={positions}
           defaultDate={toISODate(editShift.startsAt)}
           shift={editShift}
-          onDeleteRequest={(s) => setDeleteShift(s)}
+          onDeleteRequest={canMutate ? (s) => setDeleteShift(s) : undefined}
           claims={claimsByShift.get(editShift.id) ?? []}
+          currentUserId={currentUserId}
+          allShifts={shifts}
         />
       )}
 

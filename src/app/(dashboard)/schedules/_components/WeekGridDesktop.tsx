@@ -44,6 +44,7 @@ type Props = {
   groupBy: "employee" | "position";
   availabilitiesByEmployee: Map<string, AvailabilityRow[]>;
   timeOffByEmployee: TimeOffOverlayMap;
+  pendingSwapShiftIds: Set<string>;
 };
 
 function formatHoursMinutes(minutes: number): string {
@@ -68,6 +69,7 @@ export function WeekGridDesktop({
   groupBy,
   availabilitiesByEmployee,
   timeOffByEmployee,
+  pendingSwapShiftIds,
 }: Props) {
   const days = daysOfWeek(range.start);
 
@@ -85,6 +87,7 @@ export function WeekGridDesktop({
         grandTotalMinutes={grandTotalMinutes}
         availabilitiesByEmployee={availabilitiesByEmployee}
         timeOffByEmployee={timeOffByEmployee}
+        pendingSwapShiftIds={pendingSwapShiftIds}
       />
     );
   }
@@ -101,6 +104,7 @@ export function WeekGridDesktop({
       grandTotalMinutes={grandTotalMinutes}
       availabilitiesByEmployee={availabilitiesByEmployee}
       timeOffByEmployee={timeOffByEmployee}
+      pendingSwapShiftIds={pendingSwapShiftIds}
     />
   );
 }
@@ -176,6 +180,7 @@ function EmployeeGrid({
   grandTotalMinutes,
   availabilitiesByEmployee,
   timeOffByEmployee,
+  pendingSwapShiftIds,
 }: {
   shifts: WeekShift[];
   days: Date[];
@@ -188,6 +193,7 @@ function EmployeeGrid({
   grandTotalMinutes: number;
   availabilitiesByEmployee: Map<string, AvailabilityRow[]>;
   timeOffByEmployee: TimeOffOverlayMap;
+  pendingSwapShiftIds: Set<string>;
 }) {
   const openShifts = React.useMemo(
     () => shifts.filter((s) => s.employeeId === null),
@@ -356,12 +362,11 @@ function EmployeeGrid({
                           shift={s}
                           canDrag={canMutate}
                           onClick={
-                            canMutate && onShiftClick
-                              ? () => onShiftClick(s)
-                              : undefined
+                            onShiftClick ? () => onShiftClick(s) : undefined
                           }
                           availabilities={empRanges}
                           isOnApprovedTimeOff={isApprovedOff}
+                          isInPendingSwap={pendingSwapShiftIds.has(s.id)}
                         />
                       ))}
                     </DropCell>
@@ -396,6 +401,7 @@ function PositionGrid({
   grandTotalMinutes,
   availabilitiesByEmployee,
   timeOffByEmployee,
+  pendingSwapShiftIds,
 }: {
   shifts: WeekShift[];
   days: Date[];
@@ -407,6 +413,7 @@ function PositionGrid({
   grandTotalMinutes: number;
   availabilitiesByEmployee: Map<string, AvailabilityRow[]>;
   timeOffByEmployee: TimeOffOverlayMap;
+  pendingSwapShiftIds: Set<string>;
 }) {
   // Rows = positions + "none" at the end if there are any untagged shifts
   const hasUntagged = shifts.some((s) => s.positionId === null);
@@ -497,13 +504,12 @@ function PositionGrid({
                             shift={s}
                             canDrag={canMutate && s.employeeId !== null}
                             onClick={
-                              canMutate && onShiftClick
-                                ? () => onShiftClick(s)
-                                : undefined
+                              onShiftClick ? () => onShiftClick(s) : undefined
                             }
                             showEmployeeName
                             availabilities={sAvail}
                             isOnApprovedTimeOff={sOff}
+                            isInPendingSwap={pendingSwapShiftIds.has(s.id)}
                           />
                         );
                       })}

@@ -25,6 +25,7 @@ import { toISODate, formatHHMM, formatLongDate } from "@/lib/week";
 import { getPositionColor } from "@/lib/positions";
 import type { ClaimRow } from "@/lib/repositories/shiftClaim";
 import { AssignClaimDialog } from "./AssignClaimDialog";
+import { ProposeSwapDialog } from "./ProposeSwapDialog";
 import type { Employee, PositionOption, WeekShift } from "./types";
 
 type Props = {
@@ -37,6 +38,8 @@ type Props = {
   shift?: WeekShift | null;
   onDeleteRequest?: (shift: WeekShift) => void;
   claims?: ClaimRow[];
+  currentUserId: string;
+  allShifts?: WeekShift[];
 };
 
 const initialCreate: CreateState = {};
@@ -53,10 +56,13 @@ export function ShiftDialog({
   shift,
   onDeleteRequest,
   claims = [],
+  currentUserId,
+  allShifts = [],
 }: Props) {
   const [assignTarget, setAssignTarget] = React.useState<ClaimRow | null>(
     null,
   );
+  const [proposeOpen, setProposeOpen] = React.useState(false);
   const router = useRouter();
 
   const [createState, createForm, createPending] = useActionState(
@@ -248,6 +254,39 @@ export function ShiftDialog({
                 : "Dépublier ce shift (le ramener en brouillon)"}
             </Button>
           </form>
+        )}
+
+        {shift &&
+          shift.status === "PUBLISHED" &&
+          shift.employeeId === currentUserId && (
+            <div className="border-t pt-3">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => setProposeOpen(true)}
+              >
+                Proposer un échange
+              </Button>
+            </div>
+          )}
+
+        {proposeOpen && shift && (
+          <ProposeSwapDialog
+            open={true}
+            onOpenChange={(o) => {
+              if (!o) setProposeOpen(false);
+            }}
+            proposerShift={shift}
+            candidates={allShifts.filter(
+              (s) =>
+                s.status === "PUBLISHED" &&
+                s.employeeId !== null &&
+                s.employeeId !== currentUserId &&
+                s.id !== shift.id,
+            )}
+          />
         )}
 
         {shift && shift.employeeId === null && (

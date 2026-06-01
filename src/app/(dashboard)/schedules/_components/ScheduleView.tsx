@@ -22,6 +22,8 @@ type Props = {
   draftCount: number;
   claimsByShift: Map<string, ClaimRow[]>;
   pendingClaimsCount: number;
+  pendingSwapShiftIds: Set<string>;
+  currentUserId: string;
 };
 
 export function ScheduleView({
@@ -36,6 +38,8 @@ export function ScheduleView({
   draftCount,
   claimsByShift,
   pendingClaimsCount,
+  pendingSwapShiftIds,
+  currentUserId,
 }: Props) {
   const [selectedPositionIds, setSelectedPositionIds] = React.useState<
     Set<string>
@@ -87,6 +91,8 @@ export function ScheduleView({
           timeOffByEmployee={timeOffByEmployee}
           draftCount={draftCount}
           claimsByShift={claimsByShift}
+          pendingSwapShiftIds={pendingSwapShiftIds}
+          currentUserId={currentUserId}
         />
       </div>
     </div>

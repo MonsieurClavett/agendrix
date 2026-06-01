@@ -19,6 +19,7 @@ type Props = {
   showEmployeeName?: boolean;
   availabilities?: AvailabilityRow[];
   isOnApprovedTimeOff?: boolean;
+  isInPendingSwap?: boolean;
 };
 
 export function ShiftBlock({
@@ -28,6 +29,7 @@ export function ShiftBlock({
   showEmployeeName = false,
   availabilities = [],
   isOnApprovedTimeOff = false,
+  isInPendingSwap = false,
 }: Props) {
   const startStr = formatHHMM(shift.startsAt);
   const endStr = formatHHMM(shift.endsAt);
@@ -112,6 +114,14 @@ export function ShiftBlock({
           className="border-muted-foreground/40 text-muted-foreground absolute top-1 left-1 h-4 px-1 text-[9px] font-medium uppercase tracking-wide"
         >
           Brouillon
+        </Badge>
+      )}
+      {!isDraft && isInPendingSwap && (
+        <Badge
+          variant="outline"
+          className="border-blue-500/40 text-blue-600 dark:text-blue-400 absolute top-1 left-1 h-4 px-1 text-[9px] font-medium uppercase tracking-wide"
+        >
+          Échange
         </Badge>
       )}
       {showEmployeeName && (
