@@ -15,6 +15,7 @@ import {
 import { DropCell } from "./DropCell";
 import { ShiftBlock } from "./ShiftBlock";
 import type { WeekShift, Employee, PositionOption } from "./types";
+import type { AvailabilityRow } from "@/lib/repositories/availability";
 
 const FRENCH_WEEKDAYS_SHORT = [
   "Lun.",
@@ -40,6 +41,7 @@ type Props = {
   dayTotalsMinutes: number[];
   grandTotalMinutes: number;
   groupBy: "employee" | "position";
+  availabilitiesByEmployee: Map<string, AvailabilityRow[]>;
 };
 
 function formatHoursMinutes(minutes: number): string {
@@ -62,6 +64,7 @@ export function WeekGridDesktop({
   dayTotalsMinutes,
   grandTotalMinutes,
   groupBy,
+  availabilitiesByEmployee,
 }: Props) {
   const days = daysOfWeek(range.start);
 
@@ -77,6 +80,7 @@ export function WeekGridDesktop({
         rowTotalsMinutes={rowTotalsMinutes}
         dayTotalsMinutes={dayTotalsMinutes}
         grandTotalMinutes={grandTotalMinutes}
+        availabilitiesByEmployee={availabilitiesByEmployee}
       />
     );
   }
@@ -91,6 +95,7 @@ export function WeekGridDesktop({
       rowTotalsMinutes={rowTotalsMinutes}
       dayTotalsMinutes={dayTotalsMinutes}
       grandTotalMinutes={grandTotalMinutes}
+      availabilitiesByEmployee={availabilitiesByEmployee}
     />
   );
 }
@@ -164,6 +169,7 @@ function EmployeeGrid({
   rowTotalsMinutes,
   dayTotalsMinutes,
   grandTotalMinutes,
+  availabilitiesByEmployee,
 }: {
   shifts: WeekShift[];
   days: Date[];
@@ -174,6 +180,7 @@ function EmployeeGrid({
   rowTotalsMinutes: Map<string, number>;
   dayTotalsMinutes: number[];
   grandTotalMinutes: number;
+  availabilitiesByEmployee: Map<string, AvailabilityRow[]>;
 }) {
   const allEmployees: Employee[] = React.useMemo(() => {
     const out = [...employees];
@@ -239,6 +246,8 @@ function EmployeeGrid({
                   const cellShifts = empShifts.filter((s) =>
                     isSameLocalDay(s.startsAt, day),
                   );
+                  const empRanges =
+                    availabilitiesByEmployee.get(emp.id) ?? [];
                   return (
                     <DropCell
                       key={`${day.toISOString()}-${emp.id}`}
@@ -255,6 +264,7 @@ function EmployeeGrid({
                               ? () => onShiftClick(s)
                               : undefined
                           }
+                          availabilities={empRanges}
                         />
                       ))}
                     </DropCell>
@@ -287,6 +297,7 @@ function PositionGrid({
   rowTotalsMinutes,
   dayTotalsMinutes,
   grandTotalMinutes,
+  availabilitiesByEmployee,
 }: {
   shifts: WeekShift[];
   days: Date[];
@@ -296,6 +307,7 @@ function PositionGrid({
   rowTotalsMinutes: Map<string, number>;
   dayTotalsMinutes: number[];
   grandTotalMinutes: number;
+  availabilitiesByEmployee: Map<string, AvailabilityRow[]>;
 }) {
   // Rows = positions + "none" at the end if there are any untagged shifts
   const hasUntagged = shifts.some((s) => s.positionId === null);
@@ -379,6 +391,9 @@ function PositionGrid({
                               : undefined
                           }
                           showEmployeeName
+                          availabilities={
+                            availabilitiesByEmployee.get(s.employeeId) ?? []
+                          }
                         />
                       ))}
                     </DropCell>

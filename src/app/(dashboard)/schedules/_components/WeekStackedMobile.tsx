@@ -2,6 +2,8 @@
 
 import * as React from "react";
 
+import { AlertTriangle } from "lucide-react";
+
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,6 +15,8 @@ import {
   dayDiff,
   type WeekRange,
 } from "@/lib/week";
+import { isShiftOffAvailability } from "@/lib/availability";
+import type { AvailabilityRow } from "@/lib/repositories/availability";
 import type { WeekShift } from "./types";
 
 type Props = {
@@ -20,6 +24,7 @@ type Props = {
   range: WeekRange;
   canMutate: boolean;
   onShiftClick?: (shift: WeekShift) => void;
+  availabilitiesByEmployee: Map<string, AvailabilityRow[]>;
 };
 
 export function WeekStackedMobile({
@@ -27,6 +32,7 @@ export function WeekStackedMobile({
   range,
   canMutate,
   onShiftClick,
+  availabilitiesByEmployee,
 }: Props) {
   const days = daysOfWeek(range.start);
 
@@ -52,6 +58,10 @@ export function WeekStackedMobile({
                   const offset = dayDiff(s.startsAt, s.endsAt);
                   const endSuffix = offset > 0 ? ` (+${offset}j)` : "";
                   const secondary = s.note?.trim() || "Quart";
+                  const isOff = isShiftOffAvailability(
+                    { startsAt: s.startsAt, endsAt: s.endsAt },
+                    availabilitiesByEmployee.get(s.employeeId) ?? [],
+                  );
                   const row = (
                     <div className="flex w-full items-center gap-3">
                       <Avatar name={s.employee.name} size="sm" />
@@ -62,6 +72,12 @@ export function WeekStackedMobile({
                           </span>
                           {!s.employee.isActive && (
                             <Badge variant="destructive">désactivé</Badge>
+                          )}
+                          {isOff && (
+                            <AlertTriangle
+                              className="size-3.5 shrink-0 text-amber-600 dark:text-amber-400"
+                              aria-label="Hors disponibilités de l'employé"
+                            />
                           )}
                         </div>
                         <div className="text-muted-foreground text-xs">

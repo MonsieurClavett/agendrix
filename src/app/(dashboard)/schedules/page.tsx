@@ -5,6 +5,11 @@ import {
   listShiftsForUserWeek,
 } from "@/lib/repositories/shift";
 import { listPositionsForCompany } from "@/lib/repositories/position";
+import {
+  listAvailabilitiesForCompany,
+  listAvailabilitiesForEmployee,
+  type AvailabilityRow,
+} from "@/lib/repositories/availability";
 import { parseWeekParam } from "@/lib/week";
 import { ScheduleView } from "./_components/ScheduleView";
 
@@ -19,13 +24,23 @@ export default async function SchedulesPage({ searchParams }: Props) {
   const range = parseWeekParam(params.week, today);
   const isManager = ctx.role === "MANAGER";
 
-  const [shifts, employees, positions] = await Promise.all([
+  const [shifts, employees, positions, allRanges] = await Promise.all([
     isManager
       ? listShiftsForCompanyWeek(ctx, range)
       : listShiftsForUserWeek(ctx, ctx.userId, range),
     isManager ? listUsersInCompany(ctx) : Promise.resolve([]),
     isManager ? listPositionsForCompany(ctx) : Promise.resolve([]),
+    isManager
+      ? listAvailabilitiesForCompany(ctx)
+      : listAvailabilitiesForEmployee(ctx, ctx.userId),
   ]);
+
+  const availabilitiesByEmployee = new Map<string, AvailabilityRow[]>();
+  for (const r of allRanges) {
+    const list = availabilitiesByEmployee.get(r.employeeId) ?? [];
+    list.push(r);
+    availabilitiesByEmployee.set(r.employeeId, list);
+  }
 
   return (
     <div className="space-y-4">
@@ -51,6 +66,7 @@ export default async function SchedulesPage({ searchParams }: Props) {
         }))}
         canMutate={isManager}
         today={today}
+        availabilitiesByEmployee={availabilitiesByEmployee}
       />
     </div>
   );

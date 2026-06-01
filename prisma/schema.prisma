@@ -9,13 +9,14 @@ datasource db {
 }
 
 model Company {
-  id        String     @id @default(cuid())
-  name      String
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  users     User[]
-  shifts    Shift[]
-  positions Position[]
+  id             String         @id @default(cuid())
+  name           String
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  users          User[]
+  shifts         Shift[]
+  positions      Position[]
+  availabilities Availability[]
 }
 
 enum Role {
@@ -24,17 +25,18 @@ enum Role {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String
-  name         String?
-  role         Role     @default(EMPLOYEE)
-  isActive     Boolean  @default(true)
-  companyId    String
-  company      Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  shifts       Shift[]
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id             String         @id @default(cuid())
+  email          String         @unique
+  passwordHash   String
+  name           String?
+  role           Role           @default(EMPLOYEE)
+  isActive       Boolean        @default(true)
+  companyId      String
+  company        Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  shifts         Shift[]
+  availabilities Availability[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
 
   @@index([companyId])
 }
@@ -70,4 +72,19 @@ model Shift {
   @@index([companyId, startsAt])
   @@index([employeeId, startsAt])
   @@index([positionId])
+}
+
+model Availability {
+  id          String   @id @default(cuid())
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employeeId  String
+  employee    User     @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  dayOfWeek   Int
+  startMinute Int
+  endMinute   Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([companyId, employeeId, dayOfWeek])
 }

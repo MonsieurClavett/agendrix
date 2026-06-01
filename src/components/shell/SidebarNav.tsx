@@ -3,7 +3,13 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { HomeIcon, CalendarIcon, UsersIcon, TagIcon } from "lucide-react";
+import {
+  HomeIcon,
+  CalendarIcon,
+  UsersIcon,
+  TagIcon,
+  CalendarCheck,
+} from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import {
@@ -23,6 +29,7 @@ type NavItem = {
 const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Accueil", icon: HomeIcon },
   { href: "/schedules", label: "Horaires", icon: CalendarIcon },
+  { href: "/disponibilites", label: "Disponibilités", icon: CalendarCheck },
   { href: "/team", label: "Équipe", icon: UsersIcon, managerOnly: true },
   { href: "/positions", label: "Positions", icon: TagIcon, managerOnly: true },
 ];

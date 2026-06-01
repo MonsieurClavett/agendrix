@@ -2,10 +2,13 @@
 
 import * as React from "react";
 import { useDraggable } from "@dnd-kit/core";
+import { AlertTriangle } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { formatHHMM, dayDiff } from "@/lib/week";
 import { getPositionColor } from "@/lib/positions";
+import { isShiftOffAvailability } from "@/lib/availability";
+import type { AvailabilityRow } from "@/lib/repositories/availability";
 import type { WeekShift } from "./types";
 
 type Props = {
@@ -13,6 +16,7 @@ type Props = {
   canDrag: boolean;
   onClick?: () => void;
   showEmployeeName?: boolean;
+  availabilities?: AvailabilityRow[];
 };
 
 export function ShiftBlock({
@@ -20,6 +24,7 @@ export function ShiftBlock({
   canDrag,
   onClick,
   showEmployeeName = false,
+  availabilities = [],
 }: Props) {
   const startStr = formatHHMM(shift.startsAt);
   const endStr = formatHHMM(shift.endsAt);
@@ -42,6 +47,11 @@ export function ShiftBlock({
     ? getPositionColor(shift.position.color)
     : null;
 
+  const isOff = isShiftOffAvailability(
+    { startsAt: shift.startsAt, endsAt: shift.endsAt },
+    availabilities,
+  );
+
   const style: React.CSSProperties = {
     transform: baseTransform,
     borderLeft: palette ? `3px solid ${palette.accent}` : undefined,
@@ -59,16 +69,24 @@ export function ShiftBlock({
       ref={canDrag ? draggable.setNodeRef : undefined}
       style={style}
       className={cn(
-        "bg-background hover:bg-accent/40 rounded-md border px-2 py-1.5 text-left shadow-xs select-none",
+        "bg-background hover:bg-accent/40 relative rounded-md border px-2 py-1.5 text-left shadow-xs select-none",
         canDrag && "cursor-grab active:cursor-grabbing",
         draggable.isDragging && "z-30 opacity-60 shadow-lg",
         !shift.employee.isActive && "border-dashed opacity-70",
         onClick && !canDrag && "cursor-pointer",
+        isOff &&
+          "ring-1 ring-amber-500/60 dark:ring-amber-400/60",
       )}
       onClick={handleClick}
       {...(canDrag ? draggable.attributes : {})}
       {...(canDrag ? draggable.listeners : {})}
     >
+      {isOff && (
+        <AlertTriangle
+          className="absolute top-1 right-1 size-3 text-amber-600 dark:text-amber-400"
+          aria-label="Hors disponibilités de l'employé"
+        />
+      )}
       {showEmployeeName && (
         <div className="text-foreground truncate text-[11px] font-medium">
           {shift.employee.name ?? "(sans nom)"}
