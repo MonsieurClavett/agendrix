@@ -1,9 +1,14 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import * as React from "react";
+import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
-import { inviteEmployeeAction, type InviteState } from "@/actions/team/invite";
+import {
+  createInvitationAction,
+  type CreateInvitationState,
+} from "@/actions/invitations/create";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -17,27 +22,33 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-const initial: InviteState = {};
+const initial: CreateInvitationState = {};
 
 export function InviteEmployeeDialog() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [state, formAction, pending] = useActionState(
-    inviteEmployeeAction,
+    createInvitationAction,
     initial,
   );
 
-  const reset = () => {
-    setOpen(false);
-  };
+  useEffect(() => {
+    if (state.success && open) {
+      toast.success(
+        state.success.delivered
+          ? `Invitation envoyée à ${state.success.email}.`
+          : `Invitation créée. Lien disponible ci-dessous.`,
+      );
+      router.refresh();
+    } else if (state.error) {
+      toast.error(state.error);
+    }
+  }, [state.success, state.error, open, router]);
 
-  const onOpenChange = (next: boolean) => {
-    setOpen(next);
-    if (!next) router.refresh();
-  };
+  const close = () => setOpen(false);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button>Inviter un employé</Button>
       </DialogTrigger>
@@ -45,15 +56,17 @@ export function InviteEmployeeDialog() {
         <DialogHeader>
           <DialogTitle>Inviter un employé</DialogTitle>
           <DialogDescription>
-            Le mot de passe temporaire ne sera affiché qu&apos;une seule fois.
+            Un email contenant un lien d&apos;activation sera envoyé. Le lien
+            est valable 7 jours.
           </DialogDescription>
         </DialogHeader>
 
         {state.success ? (
-          <TempPasswordCard
+          <InvitationLinkCard
             email={state.success.email}
-            tempPassword={state.success.tempPassword}
-            onClose={reset}
+            link={state.success.link}
+            delivered={state.success.delivered}
+            onClose={close}
           />
         ) : (
           <form action={formAction} className="space-y-4">
@@ -101,7 +114,7 @@ export function InviteEmployeeDialog() {
 
             <DialogFooter>
               <Button type="submit" disabled={pending}>
-                {pending ? "Création…" : "Créer le compte"}
+                {pending ? "Envoi…" : "Envoyer l'invitation"}
               </Button>
             </DialogFooter>
           </form>
@@ -111,34 +124,38 @@ export function InviteEmployeeDialog() {
   );
 }
 
-function TempPasswordCard({
+function InvitationLinkCard({
   email,
-  tempPassword,
+  link,
+  delivered,
   onClose,
 }: {
   email: string;
-  tempPassword: string;
+  link: string;
+  delivered: boolean;
   onClose: () => void;
 }) {
   const [copied, setCopied] = useState(false);
-
   const copy = async () => {
-    await navigator.clipboard.writeText(tempPassword);
+    await navigator.clipboard.writeText(link);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   return (
     <div className="space-y-4">
-      <div className="rounded-md border border-amber-500/50 bg-amber-50 p-4 text-sm text-amber-900 dark:bg-amber-950/30 dark:text-amber-100">
-        <p className="font-medium">Mot de passe temporaire</p>
+      <div className="rounded-md border border-emerald-500/50 bg-emerald-50 p-4 text-sm text-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-100">
+        <p className="font-medium">
+          {delivered
+            ? `Email envoyé à ${email}`
+            : `Lien d'invitation (mode dev — aucun email envoyé)`}
+        </p>
         <p className="mt-1 text-xs">
-          Communiquez-le à {email}. Il ne sera plus affiché après la fermeture
-          de cette fenêtre.
+          Vous pouvez aussi le partager manuellement&nbsp;:
         </p>
         <div className="mt-3 flex items-center gap-2">
-          <code className="bg-background flex-1 rounded border px-2 py-1.5 font-mono text-sm">
-            {tempPassword}
+          <code className="bg-background flex-1 rounded border px-2 py-1.5 font-mono text-[11px] break-all">
+            {link}
           </code>
           <Button type="button" size="sm" variant="outline" onClick={copy}>
             {copied ? "Copié ✓" : "Copier"}

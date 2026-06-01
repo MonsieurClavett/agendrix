@@ -19,6 +19,7 @@ model Company {
   availabilities  Availability[]
   timeOffRequests TimeOffRequest[]
   shiftClaims     ShiftClaim[]
+  invitations     Invitation[]
 }
 
 enum Role {
@@ -41,6 +42,7 @@ model User {
   timeOffDecisions TimeOffRequest[] @relation("TimeOffDecider")
   shiftClaims      ShiftClaim[]     @relation("ShiftClaimRequester")
   shiftDecisions   ShiftClaim[]     @relation("ShiftClaimDecider")
+  sentInvitations  Invitation[]     @relation("Inviter")
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
@@ -160,4 +162,28 @@ model ShiftClaim {
   @@unique([shiftId, employeeId])
   @@index([companyId, status])
   @@index([shiftId])
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+}
+
+model Invitation {
+  id              String           @id @default(cuid())
+  companyId       String
+  company         Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  email           String
+  name            String
+  role            Role
+  tokenHash       String           @unique
+  expiresAt       DateTime
+  status          InvitationStatus @default(PENDING)
+  acceptedAt      DateTime?
+  invitedByUserId String?
+  invitedBy       User?            @relation("Inviter", fields: [invitedByUserId], references: [id], onDelete: SetNull)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([companyId, status])
 }

@@ -4,7 +4,9 @@ import {
   listAvailabilitiesForCompany,
   type AvailabilityRow,
 } from "@/lib/repositories/availability";
+import { listInvitationsForCompany } from "@/lib/repositories/invitation";
 import { InviteEmployeeDialog } from "./_components/InviteEmployeeDialog";
+import { PendingInvitationsList } from "./_components/PendingInvitationsList";
 import { TeamTable } from "./_components/TeamTable";
 
 export default async function TeamPage() {
@@ -12,9 +14,10 @@ export default async function TeamPage() {
   // but the page re-checks because Server Component composition isn't a
   // security boundary on its own.
   const ctx = await requireManagerContext();
-  const [users, allRanges] = await Promise.all([
+  const [users, allRanges, invitations] = await Promise.all([
     listAllUsersInCompany(ctx),
     listAvailabilitiesForCompany(ctx),
+    listInvitationsForCompany(ctx),
   ]);
 
   const rangesByEmployee = new Map<string, AvailabilityRow[]>();
@@ -37,6 +40,8 @@ export default async function TeamPage() {
         </div>
         <InviteEmployeeDialog />
       </div>
+
+      <PendingInvitationsList invitations={invitations} />
 
       <TeamTable
         users={users}

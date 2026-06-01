@@ -39,24 +39,6 @@ export async function getCurrentUser(ctx: TenantContext) {
   });
 }
 
-/** Insert a freshly invited user under the inviting manager's company. */
-export async function createInvitedUser(
-  ctx: TenantContext,
-  data: { email: string; name: string; role: Role; passwordHash: string },
-) {
-  return db.user.create({
-    data: {
-      email: data.email,
-      name: data.name,
-      role: data.role,
-      passwordHash: data.passwordHash,
-      isActive: true,
-      companyId: ctx.companyId,
-    },
-    select: { id: true, email: true, name: true, role: true },
-  });
-}
-
 /**
  * Update a user's name and role. Enforces:
  *  - tenant scope (id AND companyId match)
