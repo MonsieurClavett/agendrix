@@ -15,6 +15,10 @@ const updateSchema = z
     start: z.string().regex(/^\d{2}:\d{2}$/, "Heure de début invalide"),
     end: z.string().regex(/^\d{2}:\d{2}$/, "Heure de fin invalide"),
     note: z.string().max(280, "Note trop longue (280 max)").optional(),
+    internalNote: z
+      .string()
+      .max(500, "Note interne trop longue (500 max)")
+      .optional(),
     positionId: z.string().optional(),
   })
   .refine((d) => d.start !== d.end, {
@@ -41,6 +45,7 @@ export async function updateShiftAction(
     start: formData.get("start"),
     end: formData.get("end"),
     note: formData.get("note") || undefined,
+    internalNote: formData.get("internalNote") || undefined,
     positionId: formData.get("positionId") || undefined,
   });
 
@@ -48,8 +53,16 @@ export async function updateShiftAction(
     return { fieldErrors: parsed.error.flatten().fieldErrors };
   }
 
-  const { shiftId, employeeId, date, start, end, note, positionId } =
-    parsed.data;
+  const {
+    shiftId,
+    employeeId,
+    date,
+    start,
+    end,
+    note,
+    internalNote,
+    positionId,
+  } = parsed.data;
   const startsAt = dateTimeFromParts(date, start);
   let endsAt = dateTimeFromParts(date, end);
   if (endsAt <= startsAt) endsAt = addDays(endsAt, 1);
@@ -63,6 +76,7 @@ export async function updateShiftAction(
       startsAt,
       endsAt,
       note: note?.trim() ? note.trim() : null,
+      internalNote: internalNote?.trim() ? internalNote.trim() : null,
       positionId: positionId && positionId.trim() ? positionId : null,
     });
   } catch (err) {

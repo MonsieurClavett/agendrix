@@ -93,6 +93,7 @@ model Shift {
   startsAt        DateTime
   endsAt          DateTime
   note            String?
+  internalNote    String?
   status          ShiftStatus  @default(DRAFT)
   claims          ShiftClaim[]
   swapsAsProposer ShiftSwap[]  @relation("SwapProposerShift")

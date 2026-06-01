@@ -6,6 +6,12 @@ export type WeekShift = {
   startsAt: Date;
   endsAt: Date;
   note: string | null;
+  /**
+   * Manager-only internal note (Phase 20). The repository's EMPLOYEE
+   * selector does NOT include this field, so it stays undefined client-side
+   * for non-managers. The UI only renders it when `canMutate` is true.
+   */
+  internalNote?: string | null;
   positionId: string | null;
   status: ShiftStatus;
   employee: { id: string; name: string | null; isActive: boolean } | null;

@@ -26,12 +26,22 @@ const shiftSelect = {
   },
 } as const;
 
+/**
+ * MANAGER-only select — includes `internalNote` (Phase 20). EMPLOYEE
+ * reads MUST use `shiftSelect` so the column never leaks client-side.
+ */
+const managerShiftSelect = {
+  ...shiftSelect,
+  internalNote: true,
+} as const;
+
 export type ShiftRow = {
   id: string;
   employeeId: string | null;
   startsAt: Date;
   endsAt: Date;
   note: string | null;
+  internalNote?: string | null;
   positionId: string | null;
   status: ShiftStatus;
   employee: { id: string; name: string | null; isActive: boolean } | null;
@@ -49,7 +59,7 @@ export async function listShiftsForCompanyWeek(
       startsAt: { lt: range.end },
       endsAt: { gt: range.start },
     },
-    select: shiftSelect,
+    select: managerShiftSelect,
     orderBy: [{ startsAt: "asc" }],
   });
 }
@@ -233,6 +243,7 @@ export async function createShift(
     startsAt: Date;
     endsAt: Date;
     note: string | null;
+    internalNote: string | null;
     positionId: string | null;
   },
 ) {
@@ -272,9 +283,10 @@ export async function createShift(
         startsAt: data.startsAt,
         endsAt: data.endsAt,
         note: data.note,
+        internalNote: data.internalNote,
         positionId: data.positionId,
       },
-      select: shiftSelect,
+      select: managerShiftSelect,
     });
   });
 }
@@ -296,6 +308,7 @@ export async function updateShift(
     startsAt: Date;
     endsAt: Date;
     note: string | null;
+    internalNote: string | null;
     positionId: string | null;
   },
 ) {
@@ -342,9 +355,10 @@ export async function updateShift(
         startsAt: data.startsAt,
         endsAt: data.endsAt,
         note: data.note,
+        internalNote: data.internalNote,
         positionId: data.positionId,
       },
-      select: shiftSelect,
+      select: managerShiftSelect,
     });
   });
 }

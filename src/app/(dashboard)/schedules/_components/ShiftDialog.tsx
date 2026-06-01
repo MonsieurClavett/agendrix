@@ -205,12 +205,32 @@ export function ShiftDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="shift-note">Note (optionnelle)</Label>
+            <Label htmlFor="shift-note">
+              Note <span className="text-muted-foreground text-xs">(visible par l&apos;employé)</span>
+            </Label>
             <Input
               id="shift-note"
               name="note"
               maxLength={280}
               defaultValue={shift?.note ?? ""}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="shift-internal-note">
+              Note interne{" "}
+              <span className="text-muted-foreground text-xs">
+                (gestionnaires seulement)
+              </span>
+            </Label>
+            <textarea
+              id="shift-internal-note"
+              name="internalNote"
+              maxLength={500}
+              rows={2}
+              defaultValue={shift?.internalNote ?? ""}
+              placeholder="Visible uniquement par les gestionnaires"
+              className="border-input bg-background placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-md border px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-[3px] resize-none"
             />
           </div>
 

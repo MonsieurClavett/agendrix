@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useDraggable } from "@dnd-kit/core";
-import { AlertTriangle, CalendarOff, UserX } from "lucide-react";
+import { AlertTriangle, CalendarOff, StickyNote, UserX } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { formatHHMM, dayDiff } from "@/lib/week";
@@ -190,7 +190,7 @@ export function ShiftBlock({
           />
         </>
       )}
-      {(isOff || isOnApprovedTimeOff) && (
+      {(isOff || isOnApprovedTimeOff || shift.internalNote) && (
         <div className="absolute top-1 right-1 flex items-center gap-0.5">
           {isOff && (
             <AlertTriangle
@@ -203,6 +203,21 @@ export function ShiftBlock({
               className="size-3 text-amber-600 dark:text-amber-400"
               aria-label="Shift planifié pendant un congé approuvé"
             />
+          )}
+          {shift.internalNote && (
+            <span
+              title={
+                shift.internalNote.length > 200
+                  ? `${shift.internalNote.slice(0, 200)}…`
+                  : shift.internalNote
+              }
+              className="inline-flex"
+            >
+              <StickyNote
+                className="text-primary size-3"
+                aria-label="Note interne"
+              />
+            </span>
           )}
         </div>
       )}
