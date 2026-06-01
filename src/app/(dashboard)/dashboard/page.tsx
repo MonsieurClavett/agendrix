@@ -9,6 +9,8 @@ import {
   TagIcon,
   LayoutTemplate,
   ArrowUpRight,
+  Newspaper,
+  PinIcon,
 } from "lucide-react";
 
 import { requireTenantContext } from "@/lib/session";
@@ -23,7 +25,9 @@ import {
 import { countPendingClaimsForCompany } from "@/lib/repositories/shiftClaim";
 import { listSwapsForUser } from "@/lib/repositories/shiftSwap";
 import { listTemplates } from "@/lib/repositories/scheduleTemplate";
+import { listAnnouncementsForDashboard } from "@/lib/repositories/announcement";
 import { mondayOfWeek, weekRangeFrom } from "@/lib/week";
+import { formatRelativeDate } from "@/lib/notifications";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
@@ -48,6 +52,7 @@ export default async function DashboardPage({ searchParams }: Props) {
     pendingClaims,
     swapBuckets,
     templates,
+    announcements,
     params,
   ] = await Promise.all([
     getCurrentCompany(ctx),
@@ -60,6 +65,7 @@ export default async function DashboardPage({ searchParams }: Props) {
     isManager ? countPendingClaimsForCompany(ctx) : Promise.resolve(0),
     listSwapsForUser(ctx),
     isManager ? listTemplates(ctx) : Promise.resolve([]),
+    listAnnouncementsForDashboard(ctx),
     searchParams,
   ]);
 
@@ -170,6 +176,57 @@ export default async function DashboardPage({ searchParams }: Props) {
         />
       </div>
 
+      {announcements.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between px-1">
+            <h2 className="text-muted-foreground text-[11px] font-semibold uppercase tracking-[0.12em]">
+              Annonces récentes
+            </h2>
+            <Link
+              href="/annonces"
+              className="text-muted-foreground hover:text-foreground text-xs"
+            >
+              Tout voir →
+            </Link>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+            {announcements.map((a) => (
+              <Link
+                key={a.id}
+                href="/annonces"
+                className={cn(
+                  "lift-on-hover bg-card relative block rounded-xl border p-4",
+                  a.isPinned && "border-primary/40 brand-gradient",
+                )}
+              >
+                {a.isPinned && (
+                  <PinIcon className="text-primary absolute top-3 right-3 size-3.5" />
+                )}
+                <div className="flex items-center gap-2 text-xs">
+                  <Newspaper className="text-muted-foreground size-3.5" />
+                  <span className="text-muted-foreground">
+                    {formatRelativeDate(a.createdAt)}
+                  </span>
+                </div>
+                <h3 className="mt-1.5 line-clamp-2 text-sm font-semibold">
+                  {a.title}
+                </h3>
+                {a.body && (
+                  <p className="text-muted-foreground mt-1 line-clamp-2 text-xs">
+                    {a.body}
+                  </p>
+                )}
+                {a.author && (
+                  <p className="text-muted-foreground/80 mt-2 text-[11px]">
+                    par {a.author.name ?? a.author.email}
+                  </p>
+                )}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="grid gap-4 lg:grid-cols-3">
         {/* Quick actions */}
         <div className="lg:col-span-2 space-y-3">
@@ -201,6 +258,11 @@ export default async function DashboardPage({ searchParams }: Props) {
               href="/echanges"
               label="Échanges"
               icon={<ArrowRightLeft className="size-5" />}
+            />
+            <QuickLink
+              href="/annonces"
+              label="Annonces"
+              icon={<Newspaper className="size-5" />}
             />
             {isManager && (
               <>

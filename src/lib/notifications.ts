@@ -61,6 +61,13 @@ export const SWAP_DECIDED_BY_MANAGER_PAYLOAD = z.object({
   reason: z.string().nullable(),
 });
 
+export const ANNOUNCEMENT_POSTED_PAYLOAD = z.object({
+  type: z.literal("ANNOUNCEMENT_POSTED"),
+  announcementId: z.string(),
+  title: z.string(),
+  authorName: z.string().nullable(),
+});
+
 export const NotificationPayloadSchema = z.discriminatedUnion("type", [
   SHIFT_PUBLISHED_PAYLOAD,
   TIME_OFF_DECIDED_PAYLOAD,
@@ -69,6 +76,7 @@ export const NotificationPayloadSchema = z.discriminatedUnion("type", [
   SWAP_ACCEPTED_BY_PEER_PAYLOAD,
   SWAP_REJECTED_BY_PEER_PAYLOAD,
   SWAP_DECIDED_BY_MANAGER_PAYLOAD,
+  ANNOUNCEMENT_POSTED_PAYLOAD,
 ]);
 
 export type NotificationPayload = z.infer<typeof NotificationPayloadSchema>;
@@ -100,6 +108,10 @@ export function renderNotificationLabel(p: NotificationPayload): string {
         : p.reason
           ? `Votre échange a été refusé : ${p.reason}`
           : "Votre échange a été refusé.";
+    case "ANNOUNCEMENT_POSTED":
+      return p.authorName
+        ? `${p.authorName} a publié une annonce : ${p.title}`
+        : `Nouvelle annonce : ${p.title}`;
   }
 }
 
@@ -119,6 +131,8 @@ export function renderNotificationHref(
     case "SWAP_REJECTED_BY_PEER":
     case "SWAP_DECIDED_BY_MANAGER":
       return "/echanges";
+    case "ANNOUNCEMENT_POSTED":
+      return "/annonces";
   }
 }
 
@@ -149,6 +163,8 @@ export function renderNotificationEmailSubject(
       return p.decision === "APPROVED"
         ? "Votre échange a été approuvé"
         : "Votre échange a été refusé";
+    case "ANNOUNCEMENT_POSTED":
+      return `Nouvelle annonce : ${p.title}`;
   }
 }
 

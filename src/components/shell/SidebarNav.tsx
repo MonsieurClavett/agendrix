@@ -13,6 +13,7 @@ import {
   Megaphone,
   ArrowRightLeft,
   LayoutTemplate,
+  Newspaper,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -37,6 +38,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/conges", label: "Congés", icon: PlaneTakeoff },
   { href: "/quarts-a-combler", label: "Quarts à combler", icon: Megaphone },
   { href: "/echanges", label: "Échanges", icon: ArrowRightLeft },
+  { href: "/annonces", label: "Annonces", icon: Newspaper },
   { href: "/team", label: "Équipe", icon: UsersIcon, managerOnly: true },
   { href: "/positions", label: "Positions", icon: TagIcon, managerOnly: true },
   {
