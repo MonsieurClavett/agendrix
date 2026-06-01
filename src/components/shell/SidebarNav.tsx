@@ -18,6 +18,7 @@ import {
   ScanLine,
   MapPin,
   History,
+  BarChart3,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -63,6 +64,12 @@ const NAV_ITEMS: NavItem[] = [
     href: "/pointage",
     label: "Pointage",
     icon: ScanLine,
+    managerOnly: true,
+  },
+  {
+    href: "/rapports",
+    label: "Rapports",
+    icon: BarChart3,
     managerOnly: true,
   },
 ];

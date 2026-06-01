@@ -47,8 +47,8 @@ B2B multi-tenant SaaS for employee scheduling (style: Agendrix.com). Single data
 6. `/speckit-implement` — execute
 
 <!-- SPECKIT START -->
-**Active feature**: `022-clock-in-out`
-**Plan**: [specs/022-clock-in-out/plan.md](specs/022-clock-in-out/plan.md)
+**Active feature**: `023-reports-csv`
+**Plan**: [specs/023-reports-csv/plan.md](specs/023-reports-csv/plan.md)
 
 For technical context, structure decisions, the constitution check, and the
 project tree, read the plan above. Companion artifacts in the same folder:
@@ -62,5 +62,5 @@ Previous: `001-multi-tenant-foundations`, `002-employee-management`,
 `013-shift-swaps`, `014-recurring-templates`, `015-drag-resize`,
 `016-multi-views`, `017-ux-polish`, `018-announcements`,
 `019-employee-preferences`, `020-shift-internal-notes`,
-`021-email-notifications` shipped.
+`021-email-notifications`, `022-clock-in-out` shipped.
 <!-- SPECKIT END -->
