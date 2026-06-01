@@ -4,6 +4,7 @@ import * as React from "react";
 
 import type { WeekRange } from "@/lib/week";
 import type { AvailabilityRow } from "@/lib/repositories/availability";
+import type { ClaimRow } from "@/lib/repositories/shiftClaim";
 import type { TimeOffOverlayMap } from "@/lib/timeOff";
 import { FilterPanel } from "./FilterPanel";
 import { ScheduleCalendar } from "./ScheduleCalendar";
@@ -19,6 +20,8 @@ type Props = {
   availabilitiesByEmployee: Map<string, AvailabilityRow[]>;
   timeOffByEmployee: TimeOffOverlayMap;
   draftCount: number;
+  claimsByShift: Map<string, ClaimRow[]>;
+  pendingClaimsCount: number;
 };
 
 export function ScheduleView({
@@ -31,6 +34,8 @@ export function ScheduleView({
   availabilitiesByEmployee,
   timeOffByEmployee,
   draftCount,
+  claimsByShift,
+  pendingClaimsCount,
 }: Props) {
   const [selectedPositionIds, setSelectedPositionIds] = React.useState<
     Set<string>
@@ -65,6 +70,7 @@ export function ScheduleView({
         onToggleNone={() => setIncludeNoneFilter((v) => !v)}
         onChangeGroupBy={setGroupBy}
         onClearFilters={clearFilters}
+        pendingClaimsCount={pendingClaimsCount}
       />
       <div className="min-w-0 flex-1">
         <ScheduleCalendar
@@ -80,6 +86,7 @@ export function ScheduleView({
           availabilitiesByEmployee={availabilitiesByEmployee}
           timeOffByEmployee={timeOffByEmployee}
           draftCount={draftCount}
+          claimsByShift={claimsByShift}
         />
       </div>
     </div>

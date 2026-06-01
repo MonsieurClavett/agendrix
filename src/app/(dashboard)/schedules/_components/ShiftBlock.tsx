@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useDraggable } from "@dnd-kit/core";
-import { AlertTriangle, CalendarOff } from "lucide-react";
+import { AlertTriangle, CalendarOff, UserX } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -55,6 +55,9 @@ export function ShiftBlock({
     availabilities,
   );
   const isDraft = shift.status === "DRAFT";
+  const isOpenShift = shift.employeeId === null;
+  const employeeName = shift.employee?.name ?? "(sans nom)";
+  const employeeActive = shift.employee?.isActive ?? true;
 
   const style: React.CSSProperties = {
     transform: baseTransform,
@@ -76,8 +79,9 @@ export function ShiftBlock({
         "bg-background hover:bg-accent/40 relative rounded-md border px-2 py-1.5 text-left shadow-xs select-none",
         canDrag && "cursor-grab active:cursor-grabbing",
         draggable.isDragging && "z-30 opacity-60 shadow-lg",
-        !shift.employee.isActive && "border-dashed opacity-70",
+        !employeeActive && "border-dashed opacity-70",
         isDraft && "border-dashed opacity-75",
+        isOpenShift && "bg-muted/40",
         onClick && !canDrag && "cursor-pointer",
         (isOff || isOnApprovedTimeOff) &&
           "ring-1 ring-amber-500/60 dark:ring-amber-400/60",
@@ -117,7 +121,14 @@ export function ShiftBlock({
             isDraft && "pl-14",
           )}
         >
-          {shift.employee.name ?? "(sans nom)"}
+          {isOpenShift ? (
+            <span className="inline-flex items-center gap-1">
+              <UserX className="size-3" />
+              À combler
+            </span>
+          ) : (
+            employeeName
+          )}
         </div>
       )}
       <div

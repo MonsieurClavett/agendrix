@@ -18,6 +18,7 @@ model Company {
   positions       Position[]
   availabilities  Availability[]
   timeOffRequests TimeOffRequest[]
+  shiftClaims     ShiftClaim[]
 }
 
 enum Role {
@@ -38,6 +39,8 @@ model User {
   availabilities   Availability[]
   timeOffRequests  TimeOffRequest[] @relation("TimeOffRequester")
   timeOffDecisions TimeOffRequest[] @relation("TimeOffDecider")
+  shiftClaims      ShiftClaim[]     @relation("ShiftClaimRequester")
+  shiftDecisions   ShiftClaim[]     @relation("ShiftClaimDecider")
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
@@ -64,19 +67,20 @@ enum ShiftStatus {
 }
 
 model Shift {
-  id         String      @id @default(cuid())
+  id         String       @id @default(cuid())
   companyId  String
-  company    Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  employeeId String
-  employee   User        @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  company    Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employeeId String?
+  employee   User?        @relation(fields: [employeeId], references: [id], onDelete: Restrict)
   positionId String?
-  position   Position?   @relation(fields: [positionId], references: [id], onDelete: SetNull)
+  position   Position?    @relation(fields: [positionId], references: [id], onDelete: SetNull)
   startsAt   DateTime
   endsAt     DateTime
   note       String?
-  status     ShiftStatus @default(DRAFT)
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
+  status     ShiftStatus  @default(DRAFT)
+  claims     ShiftClaim[]
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
 
   @@index([companyId, startsAt])
   @@index([employeeId, startsAt])
@@ -130,4 +134,30 @@ model TimeOffRequest {
 
   @@index([companyId, employeeId, startDate])
   @@index([companyId, status])
+}
+
+enum ClaimStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model ShiftClaim {
+  id              String      @id @default(cuid())
+  companyId       String
+  company         Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  shiftId         String
+  shift           Shift       @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  employeeId      String
+  employee        User        @relation("ShiftClaimRequester", fields: [employeeId], references: [id], onDelete: Cascade)
+  status          ClaimStatus @default(PENDING)
+  decidedAt       DateTime?
+  decidedByUserId String?
+  decidedBy       User?       @relation("ShiftClaimDecider", fields: [decidedByUserId], references: [id], onDelete: SetNull)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@unique([shiftId, employeeId])
+  @@index([companyId, status])
+  @@index([shiftId])
 }

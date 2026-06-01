@@ -21,6 +21,7 @@ import {
   type WeekRange,
 } from "@/lib/week";
 import type { AvailabilityRow } from "@/lib/repositories/availability";
+import type { ClaimRow } from "@/lib/repositories/shiftClaim";
 import type { TimeOffOverlayMap } from "@/lib/timeOff";
 import { DeleteShiftDialog } from "./DeleteShiftDialog";
 import { EmptyWeekCard } from "./EmptyWeekCard";
@@ -43,6 +44,7 @@ type Props = {
   availabilitiesByEmployee: Map<string, AvailabilityRow[]>;
   timeOffByEmployee: TimeOffOverlayMap;
   draftCount: number;
+  claimsByShift: Map<string, ClaimRow[]>;
 };
 
 type OptimisticAction = {
@@ -69,6 +71,7 @@ export function ScheduleCalendar({
   availabilitiesByEmployee,
   timeOffByEmployee,
   draftCount,
+  claimsByShift,
 }: Props) {
   const [createOpen, setCreateOpen] = React.useState(false);
   const [editShift, setEditShift] = React.useState<WeekShift | null>(null);
@@ -90,9 +93,9 @@ export function ScheduleCalendar({
               endsAt: action.newEndsAt,
               employeeId: action.newEmployeeId,
               employee: {
-                ...s.employee,
                 id: action.newEmployeeId,
                 name: action.newEmployeeName,
+                isActive: s.employee?.isActive ?? true,
               },
               positionId: action.newPositionId,
               position: action.newPosition,
@@ -130,7 +133,9 @@ export function ScheduleCalendar({
         (s.endsAt.getTime() - s.startsAt.getTime()) / 60_000,
       );
       const rowKey =
-        groupBy === "employee" ? s.employeeId : (s.positionId ?? "none");
+        groupBy === "employee"
+          ? (s.employeeId ?? "__open__")
+          : (s.positionId ?? "none");
       rowTotals.set(rowKey, (rowTotals.get(rowKey) ?? 0) + minutes);
 
       const dayIndex = days.findIndex((d) => isSameLocalDay(d, s.startsAt));
@@ -151,6 +156,11 @@ export function ScheduleCalendar({
     const original = shifts.find((s) => s.id === shiftId);
     if (!original) return;
 
+    // Phase 9: open shifts (employeeId === null) are not draggable in this
+    // phase. The drop cell of the dedicated "Quarts à combler" row is also
+    // disabled, but bail out defensively in case the source is open.
+    if (original.employeeId === null) return;
+
     const [yyyy, mm, dd] = toDateISO.split("-").map(Number);
     const newStartsAt = new Date(original.startsAt);
     newStartsAt.setFullYear(yyyy, mm - 1, dd);
@@ -158,8 +168,8 @@ export function ScheduleCalendar({
       original.endsAt.getTime() - original.startsAt.getTime();
     const newEndsAt = new Date(newStartsAt.getTime() + duration);
 
-    let newEmployeeId = original.employeeId;
-    let newEmployeeName = original.employee.name;
+    let newEmployeeId: string | null = original.employeeId;
+    let newEmployeeName: string | null = original.employee?.name ?? null;
     let newPositionId = original.positionId;
     let newPosition = original.position;
 
@@ -174,7 +184,7 @@ export function ScheduleCalendar({
       }
       newEmployeeId = toEmployeeId;
       const target = employees.find((e) => e.id === toEmployeeId);
-      newEmployeeName = target?.name ?? original.employee.name;
+      newEmployeeName = target?.name ?? original.employee?.name ?? null;
     } else if (suffix.startsWith("pos:")) {
       const rawPositionId = suffix.slice(4);
       const toPositionId = rawPositionId === "none" ? null : rawPositionId;
@@ -224,7 +234,7 @@ export function ScheduleCalendar({
   };
 
   const buildDeleteSummary = (s: WeekShift) =>
-    `${s.employee.name ?? "(sans nom)"} — ${formatLongDate(s.startsAt)} ${formatHHMM(s.startsAt)}–${formatHHMM(s.endsAt)}`;
+    `${s.employee?.name ?? (s.employeeId ? "(sans nom)" : "Quart à combler")} — ${formatLongDate(s.startsAt)} ${formatHHMM(s.startsAt)}–${formatHHMM(s.endsAt)}`;
 
   return (
     <div className="space-y-4">
@@ -298,6 +308,7 @@ export function ScheduleCalendar({
           defaultDate={toISODate(editShift.startsAt)}
           shift={editShift}
           onDeleteRequest={(s) => setDeleteShift(s)}
+          claims={claimsByShift.get(editShift.id) ?? []}
         />
       )}
 

@@ -189,12 +189,20 @@ function EmployeeGrid({
   availabilitiesByEmployee: Map<string, AvailabilityRow[]>;
   timeOffByEmployee: TimeOffOverlayMap;
 }) {
+  const openShifts = React.useMemo(
+    () => shifts.filter((s) => s.employeeId === null),
+    [shifts],
+  );
+
   const allEmployees: Employee[] = React.useMemo(() => {
     const out = [...employees];
     const known = new Set(out.map((e) => e.id));
     for (const s of shifts) {
-      if (!known.has(s.employeeId)) {
-        out.push({ id: s.employeeId, name: s.employee.name });
+      if (s.employeeId !== null && !known.has(s.employeeId)) {
+        out.push({
+          id: s.employeeId,
+          name: s.employee?.name ?? "(sans nom)",
+        });
         known.add(s.employeeId);
       }
     }
@@ -208,10 +216,62 @@ function EmployeeGrid({
       )
     : allEmployees;
 
+  const openRowTotal = rowTotalsMinutes.get("__open__") ?? 0;
+
   return (
     <div className="bg-card overflow-x-auto rounded-md border">
       <div className="min-w-[960px]">
         <HeaderRow days={days} />
+
+        {openShifts.length > 0 && !search && (
+          <div
+            className="bg-muted/20 grid border-b"
+            style={{ gridTemplateColumns: GRID_COLS }}
+          >
+            <div className="flex items-center gap-3 border-r p-3">
+              <div className="bg-muted text-muted-foreground flex size-9 shrink-0 items-center justify-center rounded-full">
+                <span className="text-[10px] font-bold">?</span>
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium">
+                  Quarts à combler
+                </p>
+                <p className="text-muted-foreground text-xs">
+                  {formatHoursMinutes(openRowTotal)}
+                </p>
+              </div>
+            </div>
+            {days.map((day) => {
+              const dayShifts = openShifts.filter((s) =>
+                isSameLocalDay(s.startsAt, day),
+              );
+              return (
+                <DropCell
+                  key={`open-${day.toISOString()}`}
+                  id={`${toISODate(day)}|open`}
+                  enabled={false}
+                >
+                  {dayShifts.map((s) => (
+                    <ShiftBlock
+                      key={s.id}
+                      shift={s}
+                      canDrag={false}
+                      onClick={
+                        canMutate && onShiftClick
+                          ? () => onShiftClick(s)
+                          : undefined
+                      }
+                      showEmployeeName
+                    />
+                  ))}
+                </DropCell>
+              );
+            })}
+            <div className="p-3 text-right text-sm font-semibold tabular-nums">
+              {formatHoursMinutes(openRowTotal)}
+            </div>
+          </div>
+        )}
 
         {visibleEmployees.length === 0 ? (
           <div className="text-muted-foreground p-6 text-center text-sm">
@@ -222,7 +282,7 @@ function EmployeeGrid({
             const empShifts = shifts.filter((s) => s.employeeId === emp.id);
             const isDeactivated =
               empShifts.length > 0 &&
-              empShifts.every((s) => !s.employee.isActive);
+              empShifts.every((s) => !s.employee?.isActive);
             const totalMin = rowTotalsMinutes.get(emp.id) ?? 0;
             return (
               <div
@@ -422,23 +482,27 @@ function PositionGrid({
                       {cellShifts.map((s) => {
                         const sDayISO = toISODate(s.startsAt);
                         const sOff =
-                          timeOffByEmployee
-                            .get(s.employeeId)
-                            ?.approved.has(sDayISO) ?? false;
+                          s.employeeId !== null
+                            ? timeOffByEmployee
+                                .get(s.employeeId)
+                                ?.approved.has(sDayISO) ?? false
+                            : false;
+                        const sAvail =
+                          s.employeeId !== null
+                            ? availabilitiesByEmployee.get(s.employeeId) ?? []
+                            : [];
                         return (
                           <ShiftBlock
                             key={s.id}
                             shift={s}
-                            canDrag={canMutate}
+                            canDrag={canMutate && s.employeeId !== null}
                             onClick={
                               canMutate && onShiftClick
                                 ? () => onShiftClick(s)
                                 : undefined
                             }
                             showEmployeeName
-                            availabilities={
-                              availabilitiesByEmployee.get(s.employeeId) ?? []
-                            }
+                            availabilities={sAvail}
                             isOnApprovedTimeOff={sOff}
                           />
                         );

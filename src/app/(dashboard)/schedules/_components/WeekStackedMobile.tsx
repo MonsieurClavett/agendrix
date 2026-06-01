@@ -62,23 +62,33 @@ export function WeekStackedMobile({
                   const offset = dayDiff(s.startsAt, s.endsAt);
                   const endSuffix = offset > 0 ? ` (+${offset}j)` : "";
                   const secondary = s.note?.trim() || "Quart";
-                  const isOff = isShiftOffAvailability(
-                    { startsAt: s.startsAt, endsAt: s.endsAt },
-                    availabilitiesByEmployee.get(s.employeeId) ?? [],
-                  );
+                  const isOpenShift = s.employeeId === null;
+                  const displayName = isOpenShift
+                    ? "Quart à combler"
+                    : s.employee?.name ?? "(sans nom)";
+                  const isOff =
+                    !isOpenShift &&
+                    isShiftOffAvailability(
+                      { startsAt: s.startsAt, endsAt: s.endsAt },
+                      (s.employeeId &&
+                        availabilitiesByEmployee.get(s.employeeId)) ||
+                        [],
+                    );
                   const isOnApprovedTimeOff =
-                    timeOffByEmployee
-                      .get(s.employeeId)
-                      ?.approved.has(toISODate(s.startsAt)) ?? false;
+                    !isOpenShift && s.employeeId
+                      ? timeOffByEmployee
+                          .get(s.employeeId)
+                          ?.approved.has(toISODate(s.startsAt)) ?? false
+                      : false;
                   const row = (
                     <div className="flex w-full items-center gap-3">
-                      <Avatar name={s.employee.name} size="sm" />
+                      <Avatar name={displayName} size="sm" />
                       <div className="min-w-0 flex-1 text-left">
                         <div className="flex items-center gap-2">
                           <span className="truncate text-sm font-medium">
-                            {s.employee.name ?? "(sans nom)"}
+                            {displayName}
                           </span>
-                          {!s.employee.isActive && (
+                          {!isOpenShift && s.employee && !s.employee.isActive && (
                             <Badge variant="destructive">désactivé</Badge>
                           )}
                           {isOff && (

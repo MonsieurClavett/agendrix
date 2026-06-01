@@ -30,6 +30,7 @@ type Props = {
   onToggleNone: () => void;
   onChangeGroupBy: (mode: "employee" | "position") => void;
   onClearFilters: () => void;
+  pendingClaimsCount?: number;
 };
 
 export function FilterPanel({
@@ -41,6 +42,7 @@ export function FilterPanel({
   onToggleNone,
   onChangeGroupBy,
   onClearFilters,
+  pendingClaimsCount = 0,
 }: Props) {
   const anyFilterActive =
     selectedPositionIds.size > 0 || includeNoneFilter;
@@ -127,6 +129,19 @@ export function FilterPanel({
           </label>
         </li>
       </ul>
+
+      {pendingClaimsCount > 0 && (
+        <>
+          <Separator className="my-5" />
+          <SectionHeader>Quarts à combler</SectionHeader>
+          <p className="mt-2 text-xs">
+            <span className="text-foreground font-semibold">
+              {pendingClaimsCount}
+            </span>{" "}
+            demande{pendingClaimsCount > 1 ? "s" : ""} en attente.
+          </p>
+        </>
+      )}
 
       <Separator className="my-5" />
 

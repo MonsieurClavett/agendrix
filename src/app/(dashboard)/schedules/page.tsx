@@ -12,6 +12,11 @@ import {
   type AvailabilityRow,
 } from "@/lib/repositories/availability";
 import { listTimeOffOverlappingWeek } from "@/lib/repositories/timeOff";
+import {
+  countPendingClaimsForCompany,
+  listClaimsForCompanyOpenShifts,
+  type ClaimRow,
+} from "@/lib/repositories/shiftClaim";
 import { buildTimeOffMaps } from "@/lib/timeOff";
 import { parseWeekParam } from "@/lib/week";
 import { ScheduleView } from "./_components/ScheduleView";
@@ -34,6 +39,8 @@ export default async function SchedulesPage({ searchParams }: Props) {
     allRanges,
     timeOffRows,
     draftCount,
+    openShiftClaims,
+    pendingClaimsCount,
   ] = await Promise.all([
     isManager
       ? listShiftsForCompanyWeek(ctx, range)
@@ -45,7 +52,16 @@ export default async function SchedulesPage({ searchParams }: Props) {
       : listAvailabilitiesForEmployee(ctx, ctx.userId),
     listTimeOffOverlappingWeek(ctx, range),
     isManager ? countDraftsForCompanyWeek(ctx, range) : Promise.resolve(0),
+    isManager ? listClaimsForCompanyOpenShifts(ctx) : Promise.resolve([]),
+    isManager ? countPendingClaimsForCompany(ctx) : Promise.resolve(0),
   ]);
+
+  const claimsByShift = new Map<string, ClaimRow[]>();
+  for (const c of openShiftClaims) {
+    const list = claimsByShift.get(c.shiftId) ?? [];
+    list.push(c);
+    claimsByShift.set(c.shiftId, list);
+  }
 
   const availabilitiesByEmployee = new Map<string, AvailabilityRow[]>();
   for (const r of allRanges) {
@@ -83,6 +99,8 @@ export default async function SchedulesPage({ searchParams }: Props) {
         availabilitiesByEmployee={availabilitiesByEmployee}
         timeOffByEmployee={timeOffByEmployee}
         draftCount={draftCount}
+        claimsByShift={claimsByShift}
+        pendingClaimsCount={pendingClaimsCount}
       />
     </div>
   );

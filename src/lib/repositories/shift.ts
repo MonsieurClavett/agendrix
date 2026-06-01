@@ -27,13 +27,13 @@ const shiftSelect = {
 
 export type ShiftRow = {
   id: string;
-  employeeId: string;
+  employeeId: string | null;
   startsAt: Date;
   endsAt: Date;
   note: string | null;
   positionId: string | null;
   status: ShiftStatus;
-  employee: { id: string; name: string | null; isActive: boolean };
+  employee: { id: string; name: string | null; isActive: boolean } | null;
   position: { id: string; name: string; color: string } | null;
 };
 
@@ -87,6 +87,29 @@ export async function countDraftsForCompanyWeek(
   });
 }
 
+/**
+ * Open shifts (employeeId IS NULL) overlapping the week.
+ *
+ * MANAGER callers see every status. Non-MANAGER callers see PUBLISHED
+ * only — the same Phase-8 rule as for regular shifts.
+ */
+export async function listOpenShiftsForCompanyWeek(
+  ctx: TenantContext,
+  range: WeekRange,
+): Promise<ShiftRow[]> {
+  return db.shift.findMany({
+    where: {
+      companyId: ctx.companyId,
+      employeeId: null,
+      startsAt: { lt: range.end },
+      endsAt: { gt: range.start },
+      ...(ctx.role !== "MANAGER" ? { status: "PUBLISHED" as const } : {}),
+    },
+    select: shiftSelect,
+    orderBy: [{ startsAt: "asc" }],
+  });
+}
+
 /** Bulk transition every DRAFT in the visible week to PUBLISHED. Idempotent. */
 export async function publishDraftsForWeek(
   ctx: TenantContext,
@@ -133,7 +156,7 @@ export async function unpublishShift(
 export async function createShift(
   ctx: TenantContext,
   data: {
-    employeeId: string;
+    employeeId: string | null;
     startsAt: Date;
     endsAt: Date;
     note: string | null;
@@ -141,11 +164,13 @@ export async function createShift(
   },
 ) {
   return db.$transaction(async (tx) => {
-    const employee = await tx.user.findFirst({
-      where: { id: data.employeeId, companyId: ctx.companyId },
-      select: { id: true },
-    });
-    if (!employee) throw new Error("EMPLOYEE_NOT_FOUND");
+    if (data.employeeId) {
+      const employee = await tx.user.findFirst({
+        where: { id: data.employeeId, companyId: ctx.companyId },
+        select: { id: true },
+      });
+      if (!employee) throw new Error("EMPLOYEE_NOT_FOUND");
+    }
 
     if (data.positionId) {
       const position = await tx.position.findFirst({
@@ -155,15 +180,17 @@ export async function createShift(
       if (!position) throw new Error("POSITION_NOT_FOUND");
     }
 
-    const overlap = await tx.shift.findFirst({
-      where: {
-        employeeId: data.employeeId,
-        startsAt: { lt: data.endsAt },
-        endsAt: { gt: data.startsAt },
-      },
-      select: { id: true },
-    });
-    if (overlap) throw new Error("OVERLAP");
+    if (data.employeeId) {
+      const overlap = await tx.shift.findFirst({
+        where: {
+          employeeId: data.employeeId,
+          startsAt: { lt: data.endsAt },
+          endsAt: { gt: data.startsAt },
+        },
+        select: { id: true },
+      });
+      if (overlap) throw new Error("OVERLAP");
+    }
 
     return tx.shift.create({
       data: {
@@ -192,7 +219,7 @@ export async function updateShift(
   ctx: TenantContext,
   shiftId: string,
   data: {
-    employeeId: string;
+    employeeId: string | null;
     startsAt: Date;
     endsAt: Date;
     note: string | null;
@@ -206,11 +233,13 @@ export async function updateShift(
     });
     if (!existing) throw new Error("NOT_FOUND");
 
-    const employee = await tx.user.findFirst({
-      where: { id: data.employeeId, companyId: ctx.companyId },
-      select: { id: true },
-    });
-    if (!employee) throw new Error("EMPLOYEE_NOT_FOUND");
+    if (data.employeeId) {
+      const employee = await tx.user.findFirst({
+        where: { id: data.employeeId, companyId: ctx.companyId },
+        select: { id: true },
+      });
+      if (!employee) throw new Error("EMPLOYEE_NOT_FOUND");
+    }
 
     if (data.positionId) {
       const position = await tx.position.findFirst({
@@ -220,16 +249,18 @@ export async function updateShift(
       if (!position) throw new Error("POSITION_NOT_FOUND");
     }
 
-    const overlap = await tx.shift.findFirst({
-      where: {
-        id: { not: shiftId },
-        employeeId: data.employeeId,
-        startsAt: { lt: data.endsAt },
-        endsAt: { gt: data.startsAt },
-      },
-      select: { id: true },
-    });
-    if (overlap) throw new Error("OVERLAP");
+    if (data.employeeId) {
+      const overlap = await tx.shift.findFirst({
+        where: {
+          id: { not: shiftId },
+          employeeId: data.employeeId,
+          startsAt: { lt: data.endsAt },
+          endsAt: { gt: data.startsAt },
+        },
+        select: { id: true },
+      });
+      if (overlap) throw new Error("OVERLAP");
+    }
 
     return tx.shift.update({
       where: { id: shiftId },

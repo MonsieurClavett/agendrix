@@ -10,7 +10,7 @@ import { dateTimeFromParts, addDays } from "@/lib/week";
 const updateSchema = z
   .object({
     shiftId: z.string().min(1),
-    employeeId: z.string().min(1, "Employé requis"),
+    employeeId: z.string().optional(),
     date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date invalide"),
     start: z.string().regex(/^\d{2}:\d{2}$/, "Heure de début invalide"),
     end: z.string().regex(/^\d{2}:\d{2}$/, "Heure de fin invalide"),
@@ -54,9 +54,12 @@ export async function updateShiftAction(
   let endsAt = dateTimeFromParts(date, end);
   if (endsAt <= startsAt) endsAt = addDays(endsAt, 1);
 
+  const normalizedEmployeeId =
+    employeeId && employeeId.trim() ? employeeId : null;
+
   try {
     await updateShift(ctx, shiftId, {
-      employeeId,
+      employeeId: normalizedEmployeeId,
       startsAt,
       endsAt,
       note: note?.trim() ? note.trim() : null,

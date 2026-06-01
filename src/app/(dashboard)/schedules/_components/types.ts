@@ -2,13 +2,13 @@ import type { Role, ShiftStatus } from "@/generated/prisma";
 
 export type WeekShift = {
   id: string;
-  employeeId: string;
+  employeeId: string | null;
   startsAt: Date;
   endsAt: Date;
   note: string | null;
   positionId: string | null;
   status: ShiftStatus;
-  employee: { id: string; name: string | null; isActive: boolean };
+  employee: { id: string; name: string | null; isActive: boolean } | null;
   position: { id: string; name: string; color: string } | null;
 };
 

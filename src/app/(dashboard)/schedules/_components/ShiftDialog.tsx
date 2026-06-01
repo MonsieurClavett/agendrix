@@ -21,8 +21,10 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { toISODate, formatHHMM } from "@/lib/week";
+import { toISODate, formatHHMM, formatLongDate } from "@/lib/week";
 import { getPositionColor } from "@/lib/positions";
+import type { ClaimRow } from "@/lib/repositories/shiftClaim";
+import { AssignClaimDialog } from "./AssignClaimDialog";
 import type { Employee, PositionOption, WeekShift } from "./types";
 
 type Props = {
@@ -34,6 +36,7 @@ type Props = {
   defaultPositionId?: string | null;
   shift?: WeekShift | null;
   onDeleteRequest?: (shift: WeekShift) => void;
+  claims?: ClaimRow[];
 };
 
 const initialCreate: CreateState = {};
@@ -49,7 +52,11 @@ export function ShiftDialog({
   defaultPositionId,
   shift,
   onDeleteRequest,
+  claims = [],
 }: Props) {
+  const [assignTarget, setAssignTarget] = React.useState<ClaimRow | null>(
+    null,
+  );
   const router = useRouter();
 
   const [createState, createForm, createPending] = useActionState(
@@ -96,8 +103,14 @@ export function ShiftDialog({
   ]);
 
   const pickerEmployees: Employee[] =
-    shift && !employees.some((e) => e.id === shift.employeeId)
-      ? [...employees, { id: shift.employeeId, name: shift.employee.name }]
+    shift && shift.employeeId && !employees.some((e) => e.id === shift.employeeId)
+      ? [
+          ...employees,
+          {
+            id: shift.employeeId,
+            name: shift.employee?.name ?? "(sans nom)",
+          },
+        ]
       : employees;
 
   const initialDate = shift ? toISODate(shift.startsAt) : defaultDate;
@@ -122,13 +135,10 @@ export function ShiftDialog({
             <select
               id="shift-employee"
               name="employeeId"
-              required
               defaultValue={shift?.employeeId ?? ""}
               className="border-input bg-background focus-visible:border-ring focus-visible:ring-ring/50 flex h-9 w-full rounded-md border px-3 py-1 text-sm shadow-xs focus-visible:ring-[3px] outline-none"
             >
-              <option value="" disabled>
-                — Sélectionner —
-              </option>
+              <option value="">Quart à combler (aucun employé)</option>
               {pickerEmployees.map((e) => (
                 <option key={e.id} value={e.id}>
                   {e.name ?? "(sans nom)"}
@@ -238,6 +248,60 @@ export function ShiftDialog({
                 : "Dépublier ce shift (le ramener en brouillon)"}
             </Button>
           </form>
+        )}
+
+        {shift && shift.employeeId === null && (
+          <div className="border-t pt-3 space-y-2">
+            <p className="text-sm font-semibold">Demandes</p>
+            {claims.length === 0 ? (
+              <p className="text-muted-foreground text-xs">
+                Aucune demande pour le moment.
+              </p>
+            ) : (
+              <ul className="space-y-1.5">
+                {claims.map((c) => (
+                  <li
+                    key={c.id}
+                    className="flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm"
+                  >
+                    <span className="truncate">
+                      {c.employee.name ?? "(sans nom)"}
+                      <span className="text-muted-foreground ml-2 text-xs">
+                        {c.status === "PENDING"
+                          ? "en attente"
+                          : c.status === "APPROVED"
+                            ? "approuvée"
+                            : "refusée"}
+                      </span>
+                    </span>
+                    {c.status === "PENDING" && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setAssignTarget(c)}
+                      >
+                        Attribuer
+                      </Button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+
+        {assignTarget && shift && (
+          <AssignClaimDialog
+            open={true}
+            onOpenChange={(o) => {
+              if (!o) setAssignTarget(null);
+            }}
+            shiftId={shift.id}
+            claimId={assignTarget.id}
+            assigneeName={assignTarget.employee.name ?? "(sans nom)"}
+            shiftSummary={`${formatLongDate(shift.startsAt)} ${formatHHMM(shift.startsAt)}–${formatHHMM(shift.endsAt)}`}
+          />
         )}
       </DialogContent>
     </Dialog>
