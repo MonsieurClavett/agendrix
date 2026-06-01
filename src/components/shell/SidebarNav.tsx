@@ -15,6 +15,9 @@ import {
   LayoutTemplate,
   Newspaper,
   SlidersHorizontal,
+  ScanLine,
+  MapPin,
+  History,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -41,12 +44,25 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/quarts-a-combler", label: "Quarts à combler", icon: Megaphone },
   { href: "/echanges", label: "Échanges", icon: ArrowRightLeft },
   { href: "/annonces", label: "Annonces", icon: Newspaper },
+  { href: "/me/pointage", label: "Mes pointages", icon: History },
   { href: "/team", label: "Équipe", icon: UsersIcon, managerOnly: true },
   { href: "/positions", label: "Positions", icon: TagIcon, managerOnly: true },
   {
     href: "/templates",
     label: "Modèles",
     icon: LayoutTemplate,
+    managerOnly: true,
+  },
+  {
+    href: "/punch-locations",
+    label: "Postes",
+    icon: MapPin,
+    managerOnly: true,
+  },
+  {
+    href: "/pointage",
+    label: "Pointage",
+    icon: ScanLine,
     managerOnly: true,
   },
 ];

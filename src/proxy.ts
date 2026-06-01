@@ -13,6 +13,10 @@ const PROTECTED_PREFIXES = [
   "/templates",
   "/annonces",
   "/preferences",
+  "/punch-locations",
+  "/pointage",
+  "/me",
+  "/punch",
 ];
 
 export default auth((req) => {
@@ -40,5 +44,9 @@ export const config = {
     "/templates/:path*",
     "/annonces/:path*",
     "/preferences/:path*",
+    "/punch-locations/:path*",
+    "/pointage/:path*",
+    "/me/:path*",
+    "/punch/:path*",
   ],
 };

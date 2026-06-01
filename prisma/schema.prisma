@@ -25,6 +25,8 @@ model Company {
   scheduleTemplates ScheduleTemplate[]
   announcements   Announcement[]
   employeePreferences EmployeePreference[]
+  punchLocations  PunchLocation[]
+  punches         Punch[]
 }
 
 enum Role {
@@ -56,6 +58,7 @@ model User {
   templateShiftAssignments ScheduleTemplateShift[] @relation("TemplateShiftEmployee")
   announcementsAuthored Announcement[]       @relation("AnnouncementAuthor")
   preferences        EmployeePreference?
+  punches            Punch[]
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
@@ -331,4 +334,41 @@ model EmployeePreference {
   updatedAt         DateTime @updatedAt
 
   @@index([companyId])
+}
+
+model PunchLocation {
+  id        String   @id @default(cuid())
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name      String
+  token     String   @unique
+  isActive  Boolean  @default(true)
+  punches   Punch[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId, name])
+  @@index([companyId])
+}
+
+enum PunchType {
+  IN
+  OUT
+}
+
+model Punch {
+  id          String         @id @default(cuid())
+  companyId   String
+  company     Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employeeId  String
+  employee    User           @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  locationId  String?
+  location    PunchLocation? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  type        PunchType
+  punchedAt   DateTime       @default(now())
+  notes       String?
+  createdAt   DateTime       @default(now())
+
+  @@index([companyId, punchedAt(sort: Desc)])
+  @@index([employeeId, punchedAt(sort: Desc)])
 }
