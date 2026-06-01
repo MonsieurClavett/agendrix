@@ -68,6 +68,23 @@ export const ANNOUNCEMENT_POSTED_PAYLOAD = z.object({
   authorName: z.string().nullable(),
 });
 
+export const SHIFT_CHANGE_REQUESTED_PAYLOAD = z.object({
+  type: z.literal("SHIFT_CHANGE_REQUESTED"),
+  requestId: z.string(),
+  employeeName: z.string().nullable(),
+  shiftStartISO: z.string(),
+  requestedStartISO: z.string(),
+  requestedEndISO: z.string(),
+});
+
+export const SHIFT_CHANGE_DECIDED_PAYLOAD = z.object({
+  type: z.literal("SHIFT_CHANGE_DECIDED"),
+  requestId: z.string(),
+  status: z.enum(["APPROVED", "REJECTED"]),
+  shiftStartISO: z.string(),
+  managerNote: z.string().nullable(),
+});
+
 export const NotificationPayloadSchema = z.discriminatedUnion("type", [
   SHIFT_PUBLISHED_PAYLOAD,
   TIME_OFF_DECIDED_PAYLOAD,
@@ -77,6 +94,8 @@ export const NotificationPayloadSchema = z.discriminatedUnion("type", [
   SWAP_REJECTED_BY_PEER_PAYLOAD,
   SWAP_DECIDED_BY_MANAGER_PAYLOAD,
   ANNOUNCEMENT_POSTED_PAYLOAD,
+  SHIFT_CHANGE_REQUESTED_PAYLOAD,
+  SHIFT_CHANGE_DECIDED_PAYLOAD,
 ]);
 
 export type NotificationPayload = z.infer<typeof NotificationPayloadSchema>;
@@ -112,6 +131,14 @@ export function renderNotificationLabel(p: NotificationPayload): string {
       return p.authorName
         ? `${p.authorName} a publié une annonce : ${p.title}`
         : `Nouvelle annonce : ${p.title}`;
+    case "SHIFT_CHANGE_REQUESTED":
+      return `${p.employeeName ?? "Un employé"} demande à modifier son shift du ${formatISODateFR(p.shiftStartISO)}.`;
+    case "SHIFT_CHANGE_DECIDED":
+      return p.status === "APPROVED"
+        ? `Votre demande de modification pour le shift du ${formatISODateFR(p.shiftStartISO)} a été approuvée.`
+        : p.managerNote
+          ? `Votre demande de modification pour le shift du ${formatISODateFR(p.shiftStartISO)} a été refusée : ${p.managerNote}`
+          : `Votre demande de modification pour le shift du ${formatISODateFR(p.shiftStartISO)} a été refusée.`;
   }
 }
 
@@ -133,6 +160,9 @@ export function renderNotificationHref(
       return "/echanges";
     case "ANNOUNCEMENT_POSTED":
       return "/annonces";
+    case "SHIFT_CHANGE_REQUESTED":
+    case "SHIFT_CHANGE_DECIDED":
+      return "/modifications";
   }
 }
 
@@ -165,6 +195,12 @@ export function renderNotificationEmailSubject(
         : "Votre échange a été refusé";
     case "ANNOUNCEMENT_POSTED":
       return `Nouvelle annonce : ${p.title}`;
+    case "SHIFT_CHANGE_REQUESTED":
+      return "Demande de modification de shift";
+    case "SHIFT_CHANGE_DECIDED":
+      return p.status === "APPROVED"
+        ? "Votre demande de modification a été approuvée"
+        : "Votre demande de modification a été refusée";
   }
 }
 

@@ -19,6 +19,7 @@ const PROTECTED_PREFIXES = [
   "/punch",
   "/rapports",
   "/api/reports",
+  "/modifications",
 ];
 
 export default auth((req) => {
@@ -52,5 +53,6 @@ export const config = {
     "/punch/:path*",
     "/rapports/:path*",
     "/api/reports/:path*",
+    "/modifications/:path*",
   ],
 };

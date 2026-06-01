@@ -27,6 +27,7 @@ model Company {
   employeePreferences EmployeePreference[]
   punchLocations  PunchLocation[]
   punches         Punch[]
+  shiftChangeRequests ShiftChangeRequest[]
 }
 
 enum Role {
@@ -59,6 +60,8 @@ model User {
   announcementsAuthored Announcement[]       @relation("AnnouncementAuthor")
   preferences        EmployeePreference?
   punches            Punch[]
+  shiftChangeRequests        ShiftChangeRequest[] @relation("ShiftChangeRequester")
+  shiftChangeDecisions       ShiftChangeRequest[] @relation("ShiftChangeDecider")
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
@@ -101,6 +104,7 @@ model Shift {
   claims          ShiftClaim[]
   swapsAsProposer ShiftSwap[]  @relation("SwapProposerShift")
   swapsAsTarget   ShiftSwap[]  @relation("SwapTargetShift")
+  changeRequests  ShiftChangeRequest[]
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
 
@@ -217,6 +221,8 @@ enum NotificationType {
   SWAP_REJECTED_BY_PEER
   SWAP_DECIDED_BY_MANAGER
   ANNOUNCEMENT_POSTED
+  SHIFT_CHANGE_REQUESTED
+  SHIFT_CHANGE_DECIDED
 }
 
 model Notification {
@@ -371,4 +377,35 @@ model Punch {
 
   @@index([companyId, punchedAt(sort: Desc)])
   @@index([employeeId, punchedAt(sort: Desc)])
+}
+
+enum ShiftChangeRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELED_BY_EMPLOYEE
+}
+
+model ShiftChangeRequest {
+  id                  String   @id @default(cuid())
+  companyId           String
+  company             Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  shiftId             String
+  shift               Shift    @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  employeeId          String
+  employee            User     @relation("ShiftChangeRequester", fields: [employeeId], references: [id], onDelete: Cascade)
+  requestedStartsAt   DateTime
+  requestedEndsAt     DateTime
+  reason              String?
+  status              ShiftChangeRequestStatus @default(PENDING)
+  decidedAt           DateTime?
+  decidedByUserId     String?
+  decidedBy           User?    @relation("ShiftChangeDecider", fields: [decidedByUserId], references: [id], onDelete: SetNull)
+  managerNote         String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([companyId, status])
+  @@index([employeeId, status])
+  @@index([shiftId])
 }

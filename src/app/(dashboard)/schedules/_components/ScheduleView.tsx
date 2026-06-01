@@ -24,6 +24,7 @@ type Props = {
   claimsByShift: Map<string, ClaimRow[]>;
   pendingClaimsCount: number;
   pendingSwapShiftIds: Set<string>;
+  pendingChangeRequestShiftIds: Set<string>;
   currentUserId: string;
   templates: TemplateOption[];
   view: CalendarView;
@@ -43,6 +44,7 @@ export function ScheduleView({
   claimsByShift,
   pendingClaimsCount,
   pendingSwapShiftIds,
+  pendingChangeRequestShiftIds,
   currentUserId,
   templates,
   view,
@@ -99,6 +101,7 @@ export function ScheduleView({
           draftCount={draftCount}
           claimsByShift={claimsByShift}
           pendingSwapShiftIds={pendingSwapShiftIds}
+          pendingChangeRequestShiftIds={pendingChangeRequestShiftIds}
           currentUserId={currentUserId}
           templates={templates}
           view={view}

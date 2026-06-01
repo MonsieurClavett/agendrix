@@ -52,6 +52,7 @@ type Props = {
   draftCount: number;
   claimsByShift: Map<string, ClaimRow[]>;
   pendingSwapShiftIds: Set<string>;
+  pendingChangeRequestShiftIds: Set<string>;
   currentUserId: string;
   templates: TemplateOption[];
   view: CalendarView;
@@ -91,6 +92,7 @@ export function ScheduleCalendar({
   draftCount,
   claimsByShift,
   pendingSwapShiftIds,
+  pendingChangeRequestShiftIds,
   currentUserId,
   templates,
   view,
@@ -368,6 +370,7 @@ export function ScheduleCalendar({
         positions={positions}
         defaultDate={toISODate(range.start)}
         currentUserId={currentUserId}
+        hasPendingChangeRequest={false}
       />
 
       {editShift && (
@@ -385,6 +388,7 @@ export function ScheduleCalendar({
           claims={claimsByShift.get(editShift.id) ?? []}
           currentUserId={currentUserId}
           allShifts={shifts}
+          hasPendingChangeRequest={pendingChangeRequestShiftIds.has(editShift.id)}
         />
       )}
 

@@ -14,6 +14,7 @@ import {
   MapPin,
   History,
   BarChart3,
+  Edit,
 } from "lucide-react";
 
 export type NavItem = {
@@ -32,6 +33,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/conges", label: "Congés", icon: PlaneTakeoff },
   { href: "/quarts-a-combler", label: "Quarts à combler", icon: Megaphone },
   { href: "/echanges", label: "Échanges", icon: ArrowRightLeft },
+  { href: "/modifications", label: "Modifications", icon: Edit },
   { href: "/annonces", label: "Annonces", icon: Newspaper },
   { href: "/me/pointage", label: "Mes pointages", icon: History },
   { href: "/team", label: "Équipe", icon: UsersIcon, managerOnly: true },
