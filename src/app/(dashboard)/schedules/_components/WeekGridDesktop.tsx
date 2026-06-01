@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { getPositionColor } from "@/lib/positions";
 import {
-  daysOfWeek,
+  daysOfRange,
   isSameLocalDay,
   toISODate,
   type WeekRange,
@@ -28,7 +28,9 @@ const FRENCH_WEEKDAYS_SHORT = [
   "Dim.",
 ];
 
-const GRID_COLS = "220px repeat(7, minmax(0, 1fr)) 96px";
+function gridColsFor(dayCount: number): string {
+  return `220px repeat(${dayCount}, minmax(0, 1fr)) 96px`;
+}
 
 type Props = {
   shifts: WeekShift[];
@@ -73,7 +75,7 @@ export function WeekGridDesktop({
   pendingSwapShiftIds,
   onResize,
 }: Props) {
-  const days = daysOfWeek(range.start);
+  const days = daysOfRange(range);
 
   if (groupBy === "employee") {
     return (
@@ -117,21 +119,31 @@ function HeaderRow({ days }: { days: Date[] }) {
   return (
     <div
       className="bg-muted/30 grid border-b text-xs font-medium"
-      style={{ gridTemplateColumns: GRID_COLS }}
+      style={{ gridTemplateColumns: gridColsFor(days.length) }}
     >
       <div className="text-muted-foreground border-r p-3 uppercase tracking-wide">
         {/* leftmost header label */}
       </div>
-      {days.map((d, i) => (
-        <div key={d.toISOString()} className="border-r p-2 text-center">
-          <div className="text-muted-foreground text-[10px] uppercase tracking-wider">
-            {FRENCH_WEEKDAYS_SHORT[i]}
+      {days.map((d, i) => {
+        const dow = (d.getDay() + 6) % 7;
+        const isWeek2Start = days.length === 14 && i === 7;
+        return (
+          <div
+            key={d.toISOString()}
+            className={cn(
+              "border-r p-2 text-center",
+              isWeek2Start && "border-l-2 border-l-primary/40",
+            )}
+          >
+            <div className="text-muted-foreground text-[10px] uppercase tracking-wider">
+              {FRENCH_WEEKDAYS_SHORT[dow]}
+            </div>
+            <div className="text-foreground mt-0.5 text-sm font-semibold">
+              {d.getDate()}
+            </div>
           </div>
-          <div className="text-foreground mt-0.5 text-sm font-semibold">
-            {d.getDate()}
-          </div>
-        </div>
-      ))}
+        );
+      })}
       <div className="text-muted-foreground p-3 text-right uppercase tracking-wide">
         Total
       </div>
@@ -149,7 +161,7 @@ function FooterTotals({
   return (
     <div
       className="bg-muted/30 grid border-t text-xs font-medium"
-      style={{ gridTemplateColumns: GRID_COLS }}
+      style={{ gridTemplateColumns: gridColsFor(dayTotalsMinutes.length) }}
     >
       <div className="text-muted-foreground border-r p-3 uppercase tracking-wide">
         Total pour la succursale
@@ -238,7 +250,7 @@ function EmployeeGrid({
         {openShifts.length > 0 && !search && (
           <div
             className="bg-muted/20 grid border-b"
-            style={{ gridTemplateColumns: GRID_COLS }}
+            style={{ gridTemplateColumns: gridColsFor(days.length) }}
           >
             <div className="flex items-center gap-3 border-r p-3">
               <div className="bg-muted text-muted-foreground flex size-9 shrink-0 items-center justify-center rounded-full">
@@ -300,7 +312,7 @@ function EmployeeGrid({
               <div
                 key={emp.id}
                 className="grid border-b last:border-b-0"
-                style={{ gridTemplateColumns: GRID_COLS }}
+                style={{ gridTemplateColumns: gridColsFor(days.length) }}
               >
                 <div className="flex items-center gap-3 border-r p-3">
                   <Avatar name={emp.name} size="md" />
@@ -465,7 +477,7 @@ function PositionGrid({
               <div
                 key={row.key}
                 className="grid border-b last:border-b-0"
-                style={{ gridTemplateColumns: GRID_COLS }}
+                style={{ gridTemplateColumns: gridColsFor(days.length) }}
               >
                 <div className="flex items-center gap-3 border-r p-3">
                   <div

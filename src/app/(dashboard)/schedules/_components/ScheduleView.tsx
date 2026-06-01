@@ -2,7 +2,7 @@
 
 import * as React from "react";
 
-import type { WeekRange } from "@/lib/week";
+import type { CalendarView, WeekRange } from "@/lib/week";
 import type { AvailabilityRow } from "@/lib/repositories/availability";
 import type { ClaimRow } from "@/lib/repositories/shiftClaim";
 import type { TimeOffOverlayMap } from "@/lib/timeOff";
@@ -26,6 +26,8 @@ type Props = {
   pendingSwapShiftIds: Set<string>;
   currentUserId: string;
   templates: TemplateOption[];
+  view: CalendarView;
+  anchor: Date;
 };
 
 export function ScheduleView({
@@ -43,6 +45,8 @@ export function ScheduleView({
   pendingSwapShiftIds,
   currentUserId,
   templates,
+  view,
+  anchor,
 }: Props) {
   const [selectedPositionIds, setSelectedPositionIds] = React.useState<
     Set<string>
@@ -97,6 +101,8 @@ export function ScheduleView({
           pendingSwapShiftIds={pendingSwapShiftIds}
           currentUserId={currentUserId}
           templates={templates}
+          view={view}
+          anchor={anchor}
         />
       </div>
     </div>

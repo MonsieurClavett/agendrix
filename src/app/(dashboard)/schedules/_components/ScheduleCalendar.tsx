@@ -13,11 +13,12 @@ import { toast } from "sonner";
 
 import { updateShiftAction } from "@/actions/shifts/update";
 import {
-  daysOfWeek,
+  daysOfRange,
   formatHHMM,
   formatLongDate,
   isSameLocalDay,
   toISODate,
+  type CalendarView,
   type WeekRange,
 } from "@/lib/week";
 import type { AvailabilityRow } from "@/lib/repositories/availability";
@@ -49,6 +50,8 @@ type Props = {
   pendingSwapShiftIds: Set<string>;
   currentUserId: string;
   templates: TemplateOption[];
+  view: CalendarView;
+  anchor: Date;
 };
 
 type OptimisticAction =
@@ -86,6 +89,8 @@ export function ScheduleCalendar({
   pendingSwapShiftIds,
   currentUserId,
   templates,
+  view,
+  anchor,
 }: Props) {
   const [createOpen, setCreateOpen] = React.useState(false);
   const [editShift, setEditShift] = React.useState<WeekShift | null>(null);
@@ -144,9 +149,9 @@ export function ScheduleCalendar({
   );
 
   const { rowTotals, dayTotals, grandTotal } = React.useMemo(() => {
-    const days = daysOfWeek(range.start);
+    const days = daysOfRange(range);
     const rowTotals = new Map<string, number>();
-    const dayTotals = new Array<number>(7).fill(0);
+    const dayTotals = new Array<number>(days.length).fill(0);
     let grandTotal = 0;
 
     for (const s of filteredShifts) {
@@ -165,7 +170,7 @@ export function ScheduleCalendar({
     }
 
     return { rowTotals, dayTotals, grandTotal };
-  }, [filteredShifts, range.start, groupBy]);
+  }, [filteredShifts, range, groupBy]);
 
   const handleDragEnd = (event: DragEndEvent) => {
     if (!event.over || !canMutate) return;
@@ -301,6 +306,8 @@ export function ScheduleCalendar({
         onCreateClick={() => setCreateOpen(true)}
         draftCount={draftCount}
         templates={templates}
+        view={view}
+        anchor={anchor}
       />
 
       {filteredShifts.length === 0 ? (

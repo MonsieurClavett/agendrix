@@ -20,18 +20,23 @@ import {
 import { listPendingSwapShiftIds } from "@/lib/repositories/shiftSwap";
 import { listTemplates } from "@/lib/repositories/scheduleTemplate";
 import { buildTimeOffMaps } from "@/lib/timeOff";
-import { parseWeekParam } from "@/lib/week";
+import { parseISODate, parseViewParam, rangeFor } from "@/lib/week";
 import { ScheduleView } from "./_components/ScheduleView";
 
 type Props = {
-  searchParams: Promise<{ week?: string }>;
+  searchParams: Promise<{ view?: string; week?: string; day?: string }>;
 };
 
 export default async function SchedulesPage({ searchParams }: Props) {
   const ctx = await requireTenantContext();
   const params = await searchParams;
   const today = new Date();
-  const range = parseWeekParam(params.week, today);
+  const view = parseViewParam(params.view);
+  const anchor =
+    view === "day"
+      ? parseISODate(params.day, today)
+      : parseISODate(params.week, today);
+  const range = rangeFor(view, anchor);
   const isManager = ctx.role === "MANAGER";
 
   const [
@@ -94,6 +99,8 @@ export default async function SchedulesPage({ searchParams }: Props) {
       <ScheduleView
         shifts={shifts}
         range={range}
+        view={view}
+        anchor={anchor}
         employees={employees}
         positions={positions.map((p) => ({
           id: p.id,

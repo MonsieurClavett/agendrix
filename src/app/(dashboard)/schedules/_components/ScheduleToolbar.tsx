@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -17,7 +18,10 @@ import { Input } from "@/components/ui/input";
 import {
   addDays,
   mondayOfWeek,
+  nextAnchor,
+  prevAnchor,
   toISODate,
+  type CalendarView,
   type WeekRange,
 } from "@/lib/week";
 import { PublishWeekDialog } from "./PublishWeekDialog";
@@ -36,6 +40,8 @@ type Props = {
   onCreateClick: () => void;
   draftCount: number;
   templates: TemplateOption[];
+  view: CalendarView;
+  anchor: Date;
 };
 
 const FRENCH_MONTHS_SHORT = [
@@ -53,9 +59,13 @@ const FRENCH_MONTHS_SHORT = [
   "déc.",
 ];
 
-function formatRangeLabel(range: WeekRange): string {
+function formatRangeLabel(range: WeekRange, view: CalendarView): string {
   const start = range.start;
-  const end = addDays(range.start, 6);
+  if (view === "day") {
+    return `${start.getDate()} ${FRENCH_MONTHS_SHORT[start.getMonth()]} ${start.getFullYear()}`;
+  }
+  const span = view === "2week" ? 14 : 7;
+  const end = addDays(range.start, span - 1);
   const sameMonth = start.getMonth() === end.getMonth();
   const sameYear = start.getFullYear() === end.getFullYear();
   if (sameMonth && sameYear) {
@@ -67,6 +77,13 @@ function formatRangeLabel(range: WeekRange): string {
   return `${start.getDate()} ${FRENCH_MONTHS_SHORT[start.getMonth()]} ${start.getFullYear()} – ${end.getDate()} ${FRENCH_MONTHS_SHORT[end.getMonth()]} ${end.getFullYear()}`;
 }
 
+function buildHref(view: CalendarView, anchor: Date): string {
+  const iso = toISODate(anchor);
+  if (view === "day") return `/schedules?view=day&day=${iso}`;
+  if (view === "2week") return `/schedules?view=2week&week=${iso}`;
+  return `/schedules?week=${iso}`;
+}
+
 export function ScheduleToolbar({
   range,
   today,
@@ -76,12 +93,20 @@ export function ScheduleToolbar({
   onCreateClick,
   draftCount,
   templates,
+  view,
+  anchor,
 }: Props) {
-  const prev = toISODate(addDays(range.start, -7));
-  const next = toISODate(addDays(range.start, 7));
+  const prevHref = buildHref(view, prevAnchor(view, anchor));
+  const nextHref = buildHref(view, nextAnchor(view, anchor));
+  const todayMid = new Date(today);
+  todayMid.setHours(0, 0, 0, 0);
   const currentMonday = mondayOfWeek(today);
-  const isCurrentWeek = range.start.getTime() === currentMonday.getTime();
-  const label = formatRangeLabel(range);
+  const isAtToday =
+    view === "day"
+      ? anchor.getTime() === todayMid.getTime()
+      : range.start.getTime() === currentMonday.getTime();
+  const todayHref = buildHref(view, view === "day" ? todayMid : currentMonday);
+  const label = formatRangeLabel(range, view);
   const weekStartISO = toISODate(range.start);
   const [publishOpen, setPublishOpen] = React.useState(false);
   const [saveTemplateOpen, setSaveTemplateOpen] = React.useState(false);
@@ -148,18 +173,18 @@ export function ScheduleToolbar({
         </div>
 
         <div className="ml-auto flex flex-wrap items-center gap-1">
-          {!isCurrentWeek && (
+          {!isAtToday && (
             <Button asChild variant="ghost" size="sm">
-              <Link href="/schedules">Aujourd&apos;hui</Link>
+              <Link href={todayHref}>Aujourd&apos;hui</Link>
             </Button>
           )}
           <Button
             asChild
             variant="outline"
             size="icon"
-            aria-label="Semaine précédente"
+            aria-label="Précédent"
           >
-            <Link href={`/schedules?week=${prev}`}>
+            <Link href={prevHref}>
               <ChevronLeftIcon />
             </Link>
           </Button>
@@ -168,19 +193,13 @@ export function ScheduleToolbar({
             asChild
             variant="outline"
             size="icon"
-            aria-label="Semaine suivante"
+            aria-label="Suivant"
           >
-            <Link href={`/schedules?week=${next}`}>
+            <Link href={nextHref}>
               <ChevronRightIcon />
             </Link>
           </Button>
-          <select
-            defaultValue="week"
-            aria-label="Vue"
-            className="border-input bg-background h-9 rounded-md border px-2 text-sm shadow-xs"
-          >
-            <option value="week">Semaine</option>
-          </select>
+          <ViewSelect view={view} anchor={anchor} />
         </div>
       </div>
 
@@ -219,5 +238,31 @@ export function ScheduleToolbar({
         />
       )}
     </>
+  );
+}
+
+function ViewSelect({
+  view,
+  anchor,
+}: {
+  view: CalendarView;
+  anchor: Date;
+}) {
+  const router = useRouter();
+  const onChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const next = e.target.value as CalendarView;
+    router.push(buildHref(next, anchor));
+  };
+  return (
+    <select
+      value={view}
+      onChange={onChange}
+      aria-label="Vue"
+      className="border-input bg-background h-9 rounded-md border px-2 text-sm shadow-xs"
+    >
+      <option value="week">Semaine</option>
+      <option value="day">Jour</option>
+      <option value="2week">2 semaines</option>
+    </select>
   );
 }

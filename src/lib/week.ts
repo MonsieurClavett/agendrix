@@ -139,6 +139,71 @@ export function isSameLocalDay(a: Date, b: Date): boolean {
   );
 }
 
+export type CalendarView = "week" | "day" | "2week";
+
+export function parseViewParam(raw: string | undefined): CalendarView {
+  if (raw === "day" || raw === "2week") return raw;
+  return "week";
+}
+
+/**
+ * Build the visible date range for a given view, anchored at `anchor`.
+ *   - "day"   → [00:00, 24:00) of `anchor` (Monday-of-week not applied — the
+ *     anchor IS the day).
+ *   - "week"  → 7 days starting at the Monday of `anchor`.
+ *   - "2week" → 14 days starting at the Monday of `anchor`.
+ */
+export function rangeFor(view: CalendarView, anchor: Date): WeekRange {
+  if (view === "day") {
+    const start = new Date(anchor);
+    start.setHours(0, 0, 0, 0);
+    const end = addDays(start, 1);
+    end.setMilliseconds(end.getMilliseconds() - 1);
+    return { start, end };
+  }
+  if (view === "2week") {
+    const monday = mondayOfWeek(anchor);
+    const end = addDays(monday, 14);
+    end.setMilliseconds(end.getMilliseconds() - 1);
+    return { start: monday, end };
+  }
+  return weekRangeFrom(mondayOfWeek(anchor));
+}
+
+export function nextAnchor(view: CalendarView, current: Date): Date {
+  return addDays(current, view === "day" ? 1 : view === "2week" ? 14 : 7);
+}
+
+export function prevAnchor(view: CalendarView, current: Date): Date {
+  return addDays(current, view === "day" ? -1 : view === "2week" ? -14 : -7);
+}
+
+/** Enumerate consecutive midnights covering the given range. */
+export function daysOfRange(range: WeekRange): Date[] {
+  const days: Date[] = [];
+  const cur = new Date(range.start);
+  cur.setHours(0, 0, 0, 0);
+  while (cur < range.end) {
+    days.push(new Date(cur));
+    cur.setDate(cur.getDate() + 1);
+  }
+  return days;
+}
+
+/** Parse a YYYY-MM-DD param into a local date; fallback to `fallback`. */
+export function parseISODate(
+  raw: string | undefined,
+  fallback: Date,
+): Date {
+  if (raw && /^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+    const parsed = new Date(`${raw}T00:00:00`);
+    if (!Number.isNaN(parsed.getTime())) return parsed;
+  }
+  const out = new Date(fallback);
+  out.setHours(0, 0, 0, 0);
+  return out;
+}
+
 /** Whole-day count between two dates, in local time. (`b - a` in days, ignoring time.) */
 export function dayDiff(a: Date, b: Date): number {
   const aMid = new Date(a);

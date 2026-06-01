@@ -8,7 +8,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  daysOfWeek,
+  daysOfRange,
   formatHHMM,
   formatLongDate,
   isSameLocalDay,
@@ -40,7 +40,7 @@ export function WeekStackedMobile({
   timeOffByEmployee,
   pendingSwapShiftIds,
 }: Props) {
-  const days = daysOfWeek(range.start);
+  const days = daysOfRange(range);
 
   return (
     <div className="space-y-3">
