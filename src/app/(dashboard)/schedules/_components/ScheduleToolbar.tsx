@@ -5,8 +5,10 @@ import Link from "next/link";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
+  LayoutTemplate,
   PlusIcon,
   SearchIcon,
+  Save,
   Send,
 } from "lucide-react";
 
@@ -19,6 +21,11 @@ import {
   type WeekRange,
 } from "@/lib/week";
 import { PublishWeekDialog } from "./PublishWeekDialog";
+import { SaveTemplateDialog } from "./SaveTemplateDialog";
+import {
+  ApplyTemplateDialog,
+  type TemplateOption,
+} from "./ApplyTemplateDialog";
 
 type Props = {
   range: WeekRange;
@@ -28,6 +35,7 @@ type Props = {
   onSearchChange: (v: string) => void;
   onCreateClick: () => void;
   draftCount: number;
+  templates: TemplateOption[];
 };
 
 const FRENCH_MONTHS_SHORT = [
@@ -67,6 +75,7 @@ export function ScheduleToolbar({
   onSearchChange,
   onCreateClick,
   draftCount,
+  templates,
 }: Props) {
   const prev = toISODate(addDays(range.start, -7));
   const next = toISODate(addDays(range.start, 7));
@@ -75,6 +84,8 @@ export function ScheduleToolbar({
   const label = formatRangeLabel(range);
   const weekStartISO = toISODate(range.start);
   const [publishOpen, setPublishOpen] = React.useState(false);
+  const [saveTemplateOpen, setSaveTemplateOpen] = React.useState(false);
+  const [applyTemplateOpen, setApplyTemplateOpen] = React.useState(false);
 
   return (
     <>
@@ -99,6 +110,30 @@ export function ScheduleToolbar({
             {draftCount > 0 && (
               <span className="ml-1 text-xs opacity-80">({draftCount})</span>
             )}
+          </Button>
+        )}
+
+        {canMutate && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setSaveTemplateOpen(true)}
+          >
+            <Save />
+            Sauvegarder
+          </Button>
+        )}
+
+        {canMutate && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setApplyTemplateOpen(true)}
+          >
+            <LayoutTemplate />
+            Appliquer un modèle
           </Button>
         )}
 
@@ -158,6 +193,29 @@ export function ScheduleToolbar({
           draftCount={draftCount}
           weekStartISO={weekStartISO}
           weekLabel={label}
+        />
+      )}
+
+      {saveTemplateOpen && (
+        <SaveTemplateDialog
+          open={true}
+          onOpenChange={(o) => {
+            if (!o) setSaveTemplateOpen(false);
+          }}
+          weekStartISO={weekStartISO}
+          weekLabel={label}
+        />
+      )}
+
+      {applyTemplateOpen && (
+        <ApplyTemplateDialog
+          open={true}
+          onOpenChange={(o) => {
+            if (!o) setApplyTemplateOpen(false);
+          }}
+          weekStartISO={weekStartISO}
+          weekLabel={label}
+          templates={templates}
         />
       )}
     </>

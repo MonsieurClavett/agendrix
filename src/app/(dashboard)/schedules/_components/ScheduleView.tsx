@@ -8,6 +8,7 @@ import type { ClaimRow } from "@/lib/repositories/shiftClaim";
 import type { TimeOffOverlayMap } from "@/lib/timeOff";
 import { FilterPanel } from "./FilterPanel";
 import { ScheduleCalendar } from "./ScheduleCalendar";
+import type { TemplateOption } from "./ApplyTemplateDialog";
 import type { Employee, PositionOption, WeekShift } from "./types";
 
 type Props = {
@@ -24,6 +25,7 @@ type Props = {
   pendingClaimsCount: number;
   pendingSwapShiftIds: Set<string>;
   currentUserId: string;
+  templates: TemplateOption[];
 };
 
 export function ScheduleView({
@@ -40,6 +42,7 @@ export function ScheduleView({
   pendingClaimsCount,
   pendingSwapShiftIds,
   currentUserId,
+  templates,
 }: Props) {
   const [selectedPositionIds, setSelectedPositionIds] = React.useState<
     Set<string>
@@ -93,6 +96,7 @@ export function ScheduleView({
           claimsByShift={claimsByShift}
           pendingSwapShiftIds={pendingSwapShiftIds}
           currentUserId={currentUserId}
+          templates={templates}
         />
       </div>
     </div>

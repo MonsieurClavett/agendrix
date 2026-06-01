@@ -18,6 +18,7 @@ import {
   type ClaimRow,
 } from "@/lib/repositories/shiftClaim";
 import { listPendingSwapShiftIds } from "@/lib/repositories/shiftSwap";
+import { listTemplates } from "@/lib/repositories/scheduleTemplate";
 import { buildTimeOffMaps } from "@/lib/timeOff";
 import { parseWeekParam } from "@/lib/week";
 import { ScheduleView } from "./_components/ScheduleView";
@@ -43,6 +44,7 @@ export default async function SchedulesPage({ searchParams }: Props) {
     openShiftClaims,
     pendingClaimsCount,
     pendingSwapShiftIds,
+    templates,
   ] = await Promise.all([
     isManager
       ? listShiftsForCompanyWeek(ctx, range)
@@ -57,6 +59,7 @@ export default async function SchedulesPage({ searchParams }: Props) {
     isManager ? listClaimsForCompanyOpenShifts(ctx) : Promise.resolve([]),
     isManager ? countPendingClaimsForCompany(ctx) : Promise.resolve(0),
     listPendingSwapShiftIds(ctx),
+    isManager ? listTemplates(ctx) : Promise.resolve([]),
   ]);
 
   const claimsByShift = new Map<string, ClaimRow[]>();
@@ -106,6 +109,11 @@ export default async function SchedulesPage({ searchParams }: Props) {
         pendingClaimsCount={pendingClaimsCount}
         pendingSwapShiftIds={pendingSwapShiftIds}
         currentUserId={ctx.userId}
+        templates={templates.map((t) => ({
+          id: t.id,
+          name: t.name,
+          shiftCount: t._count.shifts,
+        }))}
       />
     </div>
   );

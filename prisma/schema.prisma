@@ -22,6 +22,7 @@ model Company {
   invitations     Invitation[]
   notifications   Notification[]
   shiftSwaps      ShiftSwap[]
+  scheduleTemplates ScheduleTemplate[]
 }
 
 enum Role {
@@ -49,6 +50,8 @@ model User {
   swapsProposed       ShiftSwap[]   @relation("SwapProposer")
   swapsTargeted       ShiftSwap[]   @relation("SwapTarget")
   swapsManagerDecided ShiftSwap[]   @relation("SwapManagerDecider")
+  templatesCreated    ScheduleTemplate[]     @relation("TemplateCreator")
+  templateShiftAssignments ScheduleTemplateShift[] @relation("TemplateShiftEmployee")
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
@@ -62,6 +65,7 @@ model Position {
   name      String
   color     String
   shifts    Shift[]
+  templateShifts ScheduleTemplateShift[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -257,4 +261,37 @@ model ShiftSwap {
   @@index([companyId, status])
   @@index([proposerUserId, status])
   @@index([targetUserId, status])
+}
+
+model ScheduleTemplate {
+  id              String                  @id @default(cuid())
+  companyId       String
+  company         Company                 @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name            String
+  createdByUserId String?
+  createdBy       User?                   @relation("TemplateCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  shifts          ScheduleTemplateShift[]
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+
+  @@unique([companyId, name])
+  @@index([companyId, createdAt(sort: Desc)])
+}
+
+model ScheduleTemplateShift {
+  id            String           @id @default(cuid())
+  templateId    String
+  template      ScheduleTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  employeeId    String?
+  employee      User?            @relation("TemplateShiftEmployee", fields: [employeeId], references: [id], onDelete: SetNull)
+  positionId    String?
+  position      Position?        @relation(fields: [positionId], references: [id], onDelete: SetNull)
+  dayOfWeek     Int
+  startMinute   Int
+  endMinute     Int
+  endDayOffset  Int              @default(0)
+  note          String?
+  createdAt     DateTime         @default(now())
+
+  @@index([templateId, dayOfWeek])
 }

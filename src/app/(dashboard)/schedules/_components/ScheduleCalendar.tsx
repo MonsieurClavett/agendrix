@@ -26,6 +26,7 @@ import type { TimeOffOverlayMap } from "@/lib/timeOff";
 import { DeleteShiftDialog } from "./DeleteShiftDialog";
 import { EmptyWeekCard } from "./EmptyWeekCard";
 import { ScheduleToolbar } from "./ScheduleToolbar";
+import type { TemplateOption } from "./ApplyTemplateDialog";
 import { ShiftDialog } from "./ShiftDialog";
 import { WeekGridDesktop } from "./WeekGridDesktop";
 import { WeekStackedMobile } from "./WeekStackedMobile";
@@ -47,6 +48,7 @@ type Props = {
   claimsByShift: Map<string, ClaimRow[]>;
   pendingSwapShiftIds: Set<string>;
   currentUserId: string;
+  templates: TemplateOption[];
 };
 
 type OptimisticAction = {
@@ -76,6 +78,7 @@ export function ScheduleCalendar({
   claimsByShift,
   pendingSwapShiftIds,
   currentUserId,
+  templates,
 }: Props) {
   const [createOpen, setCreateOpen] = React.useState(false);
   const [editShift, setEditShift] = React.useState<WeekShift | null>(null);
@@ -250,6 +253,7 @@ export function ScheduleCalendar({
         onSearchChange={setSearchTerm}
         onCreateClick={() => setCreateOpen(true)}
         draftCount={draftCount}
+        templates={templates}
       />
 
       {filteredShifts.length === 0 ? (

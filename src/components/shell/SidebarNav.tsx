@@ -12,6 +12,7 @@ import {
   PlaneTakeoff,
   Megaphone,
   ArrowRightLeft,
+  LayoutTemplate,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -38,6 +39,12 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/echanges", label: "Échanges", icon: ArrowRightLeft },
   { href: "/team", label: "Équipe", icon: UsersIcon, managerOnly: true },
   { href: "/positions", label: "Positions", icon: TagIcon, managerOnly: true },
+  {
+    href: "/templates",
+    label: "Modèles",
+    icon: LayoutTemplate,
+    managerOnly: true,
+  },
 ];
 
 type Props = {
